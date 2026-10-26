@@ -55,7 +55,6 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: 'npm'
 
       - name: Install Rust Stable Toolchain
         uses: dtolnay/rust-toolchain@stable
@@ -75,8 +74,8 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tagName: ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'v0.3.0' }}
-          releaseName: 'Aetherium ${{ github.ref_type == 'tag' && github.ref_name || inputs.tag_name || 'v0.3.0' }}'
+          tagName: "${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name || 'v__VERSION__' }}"
+          releaseName: "Aetherium ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name || 'v__VERSION__' }}"
           releaseBody: |
             ## Aetherium — Generative Soundscape & Receptive Music Therapy
 
