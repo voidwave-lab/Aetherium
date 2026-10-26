@@ -1,0 +1,28 @@
+[package]
+name = "aetherium"
+version = "0.1.0"
+description = "Aetherium — Generative Soundscape & Receptive Therapy Desktop Application"
+authors = ["Voidwave Lab"]
+license = "MIT"
+repository = "https://github.com/voidwave-lab/Aetherium"
+edition = "2021"
+rust-version = "1.70"
+
+[build-dependencies]
+tauri-build = { version = "1.5.5", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+tauri = { version = "1.8.0", features = [ "dialog-message", "dialog-open", "dialog-save", "fs-create-dir", "fs-exists", "fs-read-dir", "fs-read-file", "fs-remove-file", "fs-write-file", "path-all", "window-close", "window-hide", "window-maximize", "window-minimize", "window-set-title", "window-show", "window-start-dragging", "window-unmaximize", "window-unminimize"] }
+
+[features]
+default = ["custom-protocol"]
+custom-protocol = ["tauri/custom-protocol"]
+
+[profile.release]
+panic = "abort"
+codegen-units = 1
+lto = true
+opt-level = "z"
+strip = true
