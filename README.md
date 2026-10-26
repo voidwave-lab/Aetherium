@@ -1,0 +1,386 @@
+# AETHERIUM
+
+**Generative Ambient Soundscape & Receptive Music Therapy Desktop Sanctuary**
+
+> 🌐 **Language / Limba:** [**English (`README.md`)**](./README.md) | [**Română (`README.ro.md`)**](./README.ro.md)
+
+Aetherium is a free, open-source, lightweight native desktop application for **macOS**, **Windows**, and **Linux**. It synthesizes continuous, never-repeating ambient music and clinical soundscapes in real time—requiring zero musical training, zero internet connection, and zero external audio samples.
+
+It is designed for two distinct user groups:
+- **Solo Explorer**: Everyday listeners seeking nervous-system self-regulation, deep focus, contemplative drift, or restorative sleep.
+- **Practitioner / Guide**: Psychologists, psychiatrists, EMDR clinicians, and music therapists conducting spoken therapy, somatic grounding, and guided emotional regulation in clinical settings.
+
+---
+
+## Table of Contents
+
+1. [Part I: For Listeners & Practitioners (No Coding Required)](#part-i-for-listeners--practitioners-no-coding-required)
+   - [How to Download & Install](#1-how-to-download--install)
+   - [Choosing Your Space: Solo Explorer vs. Practitioner / Guide](#2-choosing-your-space-solo-explorer-vs-practitioner--guide)
+2. [Part II: Technical Architecture, DSP Signal Flow & Mathematical Models](#part-ii-technical-architecture-dsp-signal-flow--mathematical-models)
+   - [System Architecture Overview](#1-system-architecture-overview)
+   - [Keplerian Orbital Physics & Meridian Trigger Detection](#2-keplerian-orbital-physics--meridian-trigger-detection)
+   - [Harmonic Quantization & Modal Morphing Engine](#3-harmonic-quantization--modal-morphing-engine)
+   - [Multi-Layer Procedural Web Audio & Psychoacoustic DSP Graph](#4-multi-layer-procedural-web-audio--psychoacoustic-dsp-graph)
+   - [Clinical Suite DSP & Automated ISO-Principle Vector Interpolation](#5-clinical-suite-dsp--automated-iso-principle-vector-interpolation)
+   - [Procedural 2D Atmospheric Rendering Pipeline](#6-procedural-2d-atmospheric-rendering-pipeline)
+   - [Rust / Tauri v1 Native Backend & Binary Optimization](#7-rust--tauri-v1-native-backend--binary-optimization)
+3. [Part III: For Developers (Building from Source)](#part-iii-for-developers-building-from-source)
+
+---
+
+# Part I: For Listeners & Practitioners (No Coding Required)
+
+You do **not** need to install any programming tools or write any code to use Aetherium.
+
+## 1. How to Download & Install
+
+1. Visit the [**Releases Page**](../../releases) of this repository on GitHub.
+2. Under the latest release, open the **Assets** section and download the installer for your computer:
+   - **macOS (Apple Silicon M1 / M2 / M3 / M4):** Download `Aetherium_..._aarch64.dmg`
+   - **macOS (Intel Mac):** Download `Aetherium_..._x64.dmg`
+     - *macOS First-Launch Tip:* Open the `.dmg` and drag **Aetherium** into your **Applications** folder. If macOS Gatekeeper displays an *"unidentified developer"* prompt on first launch, **Right-Click (or Control-Click) `Aetherium.app` → select Open**.
+   - **Windows (Windows 10 / 11):** Download `Aetherium_..._x64-setup.exe` (or `.msi`) and double-click to run the installer.
+     - *Windows First-Launch Tip:* If Windows SmartScreen appears, click **More info → Run anyway**.
+   - **Linux (Ubuntu / Debian / Mint / Fedora):** Download `Aetherium_..._amd64.AppImage` (make it executable with `chmod +x Aetherium*.AppImage` and double-click) or install the Debian package (`sudo dpkg -i Aetherium_..._amd64.deb`).
+
+---
+
+## 2. Choosing Your Space: Solo Explorer vs. Practitioner / Guide
+
+When you launch Aetherium, a minimalist glass overlay asks you to **Select Your Space** (you can switch between spaces at any time using the pill button in the top-right corner).
+
+### Mode A: Solo Explorer (Personal Sanctuary)
+
+Designed for pure, distraction-free tactile interaction:
+
+1. **Awaken the Sanctuary:** Click **Awaken Audio** in the bottom dock to start the continuous harmonic drone.
+2. **The Orbital Canvas:**
+   - **The Central Core:** Pulses gently at the center of the screen, breathing every 10–15 seconds. Dragging the Core slightly left or right shifts the stereo balance between your speakers or headphones.
+   - **Harmonic Satellites (Up to 12 Nodes):** Click anywhere in the dark space around the Core to place an orbiting satellite.
+   - **The 12 O'Clock Meridian (`XII`):** Every time a satellite crosses the glowing vertical line directly above the Core, it triggers a musical note mathematically locked to a consonant harmonic scale—you can never hit a dissonant or "wrong" note.
+   - **Distance Controls Pitch & Speed:**
+     - **Inner Orbits (Close to Core):** Orbit faster and play delicate, higher-register notes (Octaves 4–5).
+     - **Middle Orbits:** Play warm midrange harmonies (Octaves 3–4).
+     - **Outer Orbits (Far from Core):** Orbit slowly and play deep cello/bass register notes (Octaves 2–3).
+   - **Reshaping & Dissolving:** Drag any satellite closer or further from the Core to change its pitch register; **right-click** (or **press and hold**) a satellite to dissolve it into particles.
+3. **The Bottom Poetic Dock:**
+   - **Seeds (Starting Moods):** Choose between *Rain on Felt* (intimate muted piano), *Deep Drift* (expansive space pad), *Subterranean* (grounded dark drone), or *Solar Wind* (warm, sunlit consonance).
+   - **Luminance (*Shadow ↔ Light*):** Gradually shifts the musical scale from melancholic minor (*Aeolian / Phrygian*) through wistful *Dorian* and *Major 9th* into expansive *Lydian* wonder, while brightening the tone.
+   - **Fog (*Clarity ↔ Mist*):** Wraps the soundscape in a deep, cathedral-like reverb and softens high frequencies into a distant mist.
+   - **Viscosity (*Crystalline ↔ Dense*):** Slows the orbiting satellites down, lengthens their visual motion trails, and softens note attacks into slow swells.
+   - **Nostalgia (*Pristine ↔ Worn*):** Adds gentle analog tape warmth, subtle pitch drift, distant rain/vinyl texture, and a soft sepia film grain.
+   - **Rarity (*Present ↔ Silence*):** Controls how often a satellite crossing rests in silence instead of playing a note, giving the room space to breathe.
+   - **Fade to Silence (Sleep Timer):** Click `15m`, `30m`, or `60m` next to the crescent moon icon to have Aetherium gently fade out and stop automatically.
+
+---
+
+### Mode B: Practitioner / Guide (Clinical Suite)
+
+Switching to **Practitioner / Guide** mode reveals the collapsible **Practitioner Suite** lateral panel on the right side of the screen, purpose-built for psychotherapy, psychiatry, somatic experiencing, and EMDR sessions:
+
+1. **Vocal-Range Carving (Dialogue Mode)**
+   - *The Clinical Problem:* Standard background music occupies the $400\text{ Hz} - 2.5\text{ kHz}$ frequency range—the exact same spectrum as human speech—forcing the therapist and patient to speak over the music and causing cognitive fatigue.
+   - *How It Works:* When **Dialogue ON** is active, Aetherium carves a smooth, wide acoustic pocket centered at $1100\text{ Hz}$ (adjustable from `0 dB` down to `-12 dB`). The room remains filled with comforting sub-bass warmth ($40\text{–}150\text{ Hz}$) and airy upper shimmer ($>3.5\text{ kHz}$), while spoken conversation remains effortless and crystal clear.
+
+2. **Automated ISO-Principle Session Arc (Vector Pacing)**
+   - *The Clinical Principle:* In Receptive Music Therapy, the **ISO Principle** states that music is most regulating when it first matches (*mirrors*) the patient's current emotional/autonomic state and then gradually guides them toward a regulated target state.
+   - *How It Works:*
+     1. Select your session length (`20m`, `45m`, `50m` standard clinical hour, or `60m`).
+     2. Choose **Phase 1 — Mirroring (Start State)** to match how the patient arrives (e.g., *High Agitation / Tension*, *Melancholic / Heavy*, or *Dissociated / Flat*).
+     3. Choose **Phase 2 — Co-Regulation (75% Target State)** (e.g., *Parasympathetic Rest / Safe Grounding* or *Warm Openness*).
+     4. Click **Start Session Arc**. Aetherium automatically interpolates the musical scale, orbital pace, reverb mist, and harmonic warmth across the session—and during the **final 10% (Phase 3 — Re-Orientation)**, it gently lifts luminance and clarity so the patient leaves the office alert and grounded rather than overly sedated.
+
+3. **Bilateral Grounding (EMDR / Somatic Panner)**
+   - *How It Works:* Toggle **Bilateral Grounding** on to route the harmonic voices and a soft rhythmic pulse smoothly between the **Left** and **Right** audio channels (`0.2 Hz` slow meditative sweep up to `1.5 Hz` active processing pace, with adjustable stereo width from `0%` to `100%`).
+   - *Visual + Auditory Tracking:* A soft cyan luminescence simultaneously oscillates across the left and right edges of the screen (paired with a horizontal tracking beacon) so the patient can track the bilateral rhythm visually, auditorily, or both.
+
+4. **Somatic Sub-Bass ($40\text{–}60\text{ Hz}$) & Binaural Theta Entrainment**
+   - **Somatic Sub-Bass Anchor ($40\text{–}60\text{ Hz}$):** Boosts a pure, warm sub-fundamental sine wave that creates a comforting physical sensation of grounding in the room or headphones for anxious or dissociating patients.
+   - **Binaural Theta (`100Hz L / 106Hz R`):** For headphone sessions, toggling **6Hz ON** sends $100\text{ Hz}$ to the left ear and $106\text{ Hz}$ to the right ear, generating a gentle $6\text{ Hz}$ Theta binaural beat organically masked beneath the music.
+   - **Session Presets:** Save custom clinical configurations to quick one-click slots or export/import `.aether.json` files to share across clinic computers.
+
+---
+
+# Part II: Technical Architecture, DSP Signal Flow & Mathematical Models
+
+This section details **what** Aetherium implements under the hood and **how** each subsystem is engineered.
+
+## 1. System Architecture Overview
+
+Aetherium is architected as a zero-dependency-bloat, event-driven desktop application split into four tightly decoupled layers:
+
+```mermaid
+flowchart TD
+    subgraph UI["Frontend HUD Layer (TypeScript + TailwindCSS)"]
+        OM["OnboardingModal.ts"]
+        TB["TopBar.ts"]
+        PD["PoeticDock.ts"]
+        PRD["PractitionerDock.ts"]
+    end
+
+    subgraph STATE["Reactive State & Interpolation Core"]
+        ST["store.ts (AetheriumStore + ISO Cosine Vector Engine)"]
+    end
+
+    subgraph VISUAL["60fps Celestial & Shader Canvas"]
+        SC["SanctuaryCanvas.ts (Keplerian Physics + Meridian Ripples + EMDR Glow)"]
+    end
+
+    subgraph AUDIO["Procedural Web Audio & Psychoacoustic DSP"]
+        HE["HarmonicEngine.ts (Tonal Modal Quantizer)"]
+        AE["AudioEngine.ts (Tone.js 3-Layer Synth & Clinical Bus)"]
+    end
+
+    subgraph NATIVE["Tauri v1 Native Rust Core (src-tauri)"]
+        RS["main.rs (Scoped FS Persistence & Serde Validation)"]
+    end
+
+    UI -->|Dispatches Actions| ST
+    ST -->|State Subscriptions| UI
+    ST -->|Macro & Orbit State| SC
+    SC -->|Meridian Crossing: onSatelliteTrigger| ST
+    ST -->|Trigger Payload & Macros| AE
+    HE -->|Scale & Register Quantization| ST
+    HE -->|Drone Voicings & Sub-Roots| AE
+    AE -->|0.05-0.15Hz Breath & EMDR Phase| SC
+    UI <-->|Tauri IPC invoke| RS
+```
+
+---
+
+## 2. Keplerian Orbital Physics & Meridian Trigger Detection
+
+Implemented in [`src/canvas/SanctuaryCanvas.ts`](./src/canvas/SanctuaryCanvas.ts), the viewport replaces linear DAW timelines with a polar gravitational coordinate system centered on the **Central Attractor (The Core)**.
+
+### Elliptical Orbit Geometry
+Each satellite node $i \in [1, 12]$ stores a normalized semi-major axis $a \in [0.14, 0.94]$, orbital eccentricity $e \in [0.04, 0.24]$, argument of periapsis $\omega$, and true anomaly angle $\theta \in [-\pi, \pi]$. Instantaneous radial distance from the Core is computed via the Keplerian conic section equation:
+
+$$r(\theta) = \frac{a(1 - e^2)}{1 + e \cos(\theta - \omega)}$$
+
+### Angular Velocity & Viscosity Damping
+Following Kepler's Second and Third Laws of planetary motion, angular velocity is inversely proportional to $r^{3/2}$ (implemented with a tuned exponent of $1.42$ for tactile playability) and modulated by both the **Viscosity** macro parameter ($v \in [0, 1]$) and the **ISO-Principle Orbital Pace Multiplier** ($m_{\text{iso}}$):
+
+$$\frac{d\theta}{dt} = \frac{k_0}{\max(0.14, r(\theta))^{1.42}} \cdot (1 - 0.68v) \cdot m_{\text{iso}}$$
+
+where $k_0 = 0.22\text{ rad/s}$. Inner satellites ($a \approx 0.14$) complete orbits rapidly, whereas outer satellites ($a \approx 0.90$) drift across long meditative cycles.
+
+### North Meridian Crossing Detection
+The **Meridian (`XII`)** is positioned at $\theta_{\text{meridian}} = -\frac{\pi}{2}$ (12 o'clock North). On every animation frame $\Delta t$, if a satellite's previous angle $\theta_{t-1}$ and updated angle $\theta_t$ satisfy:
+
+$$\theta_{t-1} < -\frac{\pi}{2} \le \theta_t$$
+
+the canvas invokes `store.emitSatelliteTrigger(sat)`, which dispatches a DOM `CustomEvent('onSatelliteTrigger', { detail })` on `window`, notifies all registered audio listeners, flashes the Meridian filament, and spawns an expanding radial luminescence ripple at the crossing coordinate.
+
+---
+
+## 3. Harmonic Quantization & Modal Morphing Engine
+
+Implemented in [`src/audio/HarmonicEngine.ts`](./src/audio/HarmonicEngine.ts) using the `Tonal` music-theory library, Aetherium guarantees that user interactions never produce harsh or accidental dissonance.
+
+### Luminance-Driven Modal State Machine
+The `Luminance` macro parameter ($L \in [0.0, 1.0]$) acts as a continuous harmonic brightness vector that morphs both the active scale pitch-class set and the continuous Core Drone 4-note chord voicing across four psychoacoustic zones:
+
+| Luminance Range | Harmonic Zone ID | Musical Mode & Voicing | Emotional / Psychoacoustic Profile |
+| :--- | :--- | :--- | :--- |
+| **`0.00 – 0.25`** | `shadow-aeolian` | **Aeolian (Natural Minor)** or **Phrygian** (`C` / `D`) | Deep melancholic shadow, grounded introspection |
+| **`0.25 – 0.50`** | `wistful-dorian` | **Dorian Mode** with $\text{min7}$ & $\text{add9}$ extensions | Intimate, wistful warmth (raised natural 6th + 9th) |
+| **`0.50 – 0.75`** | `floating-maj9` | **Major Pentatonic / $\text{Maj9}$** (`1, 9, 3, 5, 6, 7`) | Open, floating, reassuring consonance |
+| **`0.75 – 1.00`** | `cosmic-lydian` | **Lydian Mode** ($\sharp 4 / \sharp 11$ raised fourth) | Expansive, weightless space-ambient wonder |
+
+### Orbital Radius-to-Octave Register Mapping
+When a satellite is spawned or dragged to a new orbital radius $a$, `HarmonicEngine.mapRadiusToOctave(a)` maps its distance from the Core to a specific psychoacoustic pitch register:
+- **Inner Orbits ($0.14 \le a < 0.38$):** Crystalline upper register (**Octaves 4–5**).
+- **Middle Orbits ($0.38 \le a < 0.68$):** Warm midrange body (**Octaves 3–4**).
+- **Outer Orbits ($0.68 \le a \le 0.94$):** Deep cello and bass register (**Octaves 2–3**).
+
+### Rarity (Probabilistic Entropy Gate)
+Before a Meridian crossing triggers audio synthesis, `store.emitSatelliteTrigger` evaluates a Bernoulli trial against the `Rarity` slider ($R \in [0, 1]$):
+
+$$P(\text{silence}) = 0.90 \cdot R$$
+
+When the entropy gate skips a trigger (`silencedByRarity = true`), the audio engine remains silent while the canvas renders a muted slate-grey pulse (`· silence`), introducing organic breathing room into the composition.
+
+---
+
+## 4. Multi-Layer Procedural Web Audio & Psychoacoustic DSP Graph
+
+Implemented in [`src/audio/AudioEngine.ts`](./src/audio/AudioEngine.ts) using **Web Audio API** and **Tone.js**, all sound is synthesized procedurally in real time (zero external `.mp3` or `.wav` assets). Every parameter transition uses `rampTo(value, 0.2)` ($200\text{ ms}$ smoothing) to prevent zipper noise or phase clicks.
+
+```mermaid
+flowchart LR
+    subgraph LAYERS["3 Procedural Synthesis Layers"]
+        direction TB
+        LA["Layer A: Core Drone\n3x FatSawtooth Pad + -12dB Sub-Sine\n→ 24dB LPF (0.05-0.15Hz Breath LFO)"]
+        LB["Layer B: Satellite Voices\n1. FM Felt Piano Pluck\n2. Slow-Attack (1.5-4s) AM Glassy Pad"]
+        LC["Layer C: Organic Texture\nPink + Brown Noise\n→ 0.065Hz Swept Bandpass Filter"]
+    end
+
+    subgraph PAN["Spatial & EMDR Stage"]
+        CP["Core Panner (coreOffset.x)"]
+        BP["Bilateral EMDR Panner\n(0.2-1.5Hz Sine LFO + Harmonic Pulse)"]
+    end
+
+    subgraph MACRO_BUS["Poetic Macro DSP Bus"]
+        WS["Nostalgia Soft-Clip WaveShaper\n(tanh saturation curve)"]
+        TD["Nostalgia Tape Delay\n(0.8Hz Wow & Flutter LFO)"]
+        PP["Stereo PingPongDelay\n(Viscosity + Fog feedback)"]
+        RV["Freeverb + Convolution Reverb\n(2s to 18s effective decay)"]
+        LPF["Fog Master Low-Pass Filter\n(12kHz → 1.2kHz roll-off)"]
+    end
+
+    subgraph CLINICAL_BUS["Clinical & Master Protection Bus"]
+        VC["Vocal-Range Carving EQ\n(1100Hz, Q=0.7, 0 to -12dB)"]
+        SUB["Somatic Sub-Bass (40-60Hz Sine)\n& Binaural Theta (100Hz L / 106Hz R)"]
+        MG["Master Gain & Sleep Fade"]
+        CMP["Master Glue Compressor\n(-15dB, 3.2:1)"]
+        LIM["Brickwall Limiter (-1.0 dBFS)"]
+    end
+
+    LA --> CP --> WS
+    LB --> BP --> WS
+    WS --> TD --> PP --> RV --> LPF
+    LC --> LPF
+    LPF --> VC --> MG
+    SUB -->|Bypasses Midrange Notch| MG
+    MG --> CMP --> LIM --> OUT(("Audio Output"))
+```
+
+### Synthesis Layer Details
+1. **Layer A — The Core Drone:**
+   - **Pad Foundation:** `Tone.PolySynth(Tone.Synth)` configured with a 3-oscillator detuned sawtooth (`type: 'fatsawtooth'`, `spread: 24 cents`) playing the active 4-note modal voicing.
+   - **Sub-Fundamental Anchor:** Dedicated `Tone.Synth` (`type: 'sine'`, attenuated at `-12 dB` relative to the pad) locked to `rootNote + 1` (e.g., `C1`, `D1`, `F1`, `G1`).
+   - **Respiratory Filter Modulation:** Both oscillators feed a resonant `24 dB/oct` low-pass filter (`Q = 2.1`) whose cutoff frequency is swept by a slow sinusoidal LFO (`0.05 Hz` to `0.15 Hz`, corresponding to a 6.6-to-20-second respiratory cycle). The instantaneous phase of this LFO is exposed via `audioEngine.getBreathingModulation(timeSec)` so the visual Core on the canvas expands and contracts in exact synchrony with the acoustic filter swell.
+2. **Layer B — Dual-Timbre Satellite Voices:**
+   - **Voice 1 (Felt Piano / Intimate Pluck):** Polyphonic `Tone.FMSynth` (`harmonicity: 2.0`, `modulationIndex: 1.2 + 1.4 * luminance`, triangle modulator with fast decay) producing a soft, muted felt-hammer transient followed by a warm woody decay (`attack: 0.015s – 0.28s`, `release: 1.8s – 6.5s`).
+   - **Voice 2 (Glassy Space Pad):** Polyphonic `Tone.AMSynth` (`harmonicity: 1.5` fifth overtone shimmer, dual `fatsine` carrier) with a click-free slow attack (`1.5s – 4.0s` scaled by `viscosity`) and long halo release (`3.0s – 8.5s`).
+   - Each Seed preset defines its primary timbre (*Rain on Felt* and *Subterranean* prioritize Felt Piano; *Deep Drift* and *Solar Wind* prioritize Glassy Space Pad) while cross-blending the secondary timbre dynamically as `viscosity` and `luminance` change.
+3. **Layer C — Organic Texture Generator:**
+   - Dual procedural `Tone.Noise('pink')` and `Tone.Noise('brown')` generators routed through a `12 dB/oct` bandpass filter (`Q = 1.8`) swept continuously between `240 Hz` and `1,180 Hz` by a `0.065 Hz` LFO, emulating distant rain on felt, wind through pines, or warm analog room tone.
+
+### Poetic Macro DSP Equations
+- **Fog ($F \in [0, 1]$):** Controls the wet mix and room size of a cascaded `Tone.Freeverb` + `Tone.Reverb` network (scaling effective decay from $2\text{s}$ up to $18\text{s}$) while exponentially rolling off the Master Low-Pass Filter cutoff from $12\text{ kHz}$ down to $1.2\text{ kHz}$:
+
+$$f_{\text{fog}}(F, L) = \text{clamp}\left(12000 \cdot \left(\frac{1200}{12000}\right)^F \cdot (0.75 + 0.50L),\ 950,\ 14000\right)\text{ Hz}$$
+
+- **Nostalgia ($N \in [0, 1]$):**
+  1. Modulates a short delay line (`12 ms` center) with a `0.8 Hz` sine LFO by $\pm 3.8N\text{ ms}$ to create authentic analog tape *wow & flutter* pitch drift.
+  2. Drives a 1024-point hyperbolic tangent soft-clipping waveshaper for warm midrange saturation:
+
+$$y(x) = \frac{\tanh(k \cdot x)}{\tanh(k)}, \quad k = 0.6 + 2.2N$$
+
+---
+
+## 5. Clinical Suite DSP & Automated ISO-Principle Vector Interpolation
+
+### 1. Vocal-Range Acoustic Carving (Dialogue Mode)
+Inserts a parametric peaking EQ stage (`Tone.Filter` with `type: 'peaking'`, `frequency: 1100 Hz`, `Q: 0.7`, `gain` adjustable from `0 dB` to `-12 dB`) on the master bus downstream of the reverb/delay network. Because $Q = 0.7$ spans roughly two octaves around $1.1\text{ kHz}$, it carves a transparent acoustic pocket across the fundamental and formant frequencies of human speech ($400\text{ Hz} – 2.5\text{ kHz}$) while leaving sub-bass ($40\text{–}150\text{ Hz}$) and high air ($>3.5\text{ kHz}$) untouched.
+
+### 2. Automated ISO-Principle Piecewise Cosine Vector Engine
+Implemented in [`evaluateIsoSessionArc`](./src/state/store.ts) inside `src/state/store.ts`, the session timeline normalizes elapsed time into $p = \frac{t_{\text{elapsed}}}{t_{\text{total}}} \in [0, 1]$ and interpolates the 6-dimensional clinical state vector $\mathbf{V} = [\text{luminance}, \text{fog}, \text{viscosity}, \text{nostalgia}, \text{rarity}, m_{\text{iso}}]^T$ using smooth cosine interpolation:
+
+$$\mu(t) = \frac{1 - \cos(\pi t)}{2}, \quad \mathbf{V}(t) = (1 - \mu(t))\mathbf{V}_a + \mu(t)\mathbf{V}_b$$
+
+- **Phase 1 — Mirroring ($0.00 \le p < 0.22$) & Phase 2 Ramp ($0.22 \le p < 0.75$):** Smoothly transitions from the selected initial patient state $\mathbf{V}_{\text{start}}$ (*High Agitation*, *Melancholic/Heavy*, or *Dissociated/Flat*) to the co-regulation target state $\mathbf{V}_{\text{target}}$ at $p = 0.75$.
+- **Phase 2 Consolidation Plateau ($0.75 \le p < 0.90$):** Holds the regulated target state $\mathbf{V}_{\text{target}}$ steady for deep parasympathetic grounding.
+- **Phase 3 — Re-Orientation ($0.90 \le p \le 1.00$):** Interpolates over the final $10\%$ of the session toward $\mathbf{V}_{\text{reorient}}$ (`luminance: 0.84`, `fog: 0.22`, `viscosity: 0.36`, `orbitalSpeed: 0.96`), gently restoring cognitive alertness before the session concludes.
+
+### 3. Bilateral Stimulation (EMDR / Somatic Panner)
+Routes Layer B Satellite voices and a dedicated soft harmonic pulse oscillator (`emdrPulseOsc`, tuned to the active scale's root in Octave 3 and amplitude-modulated at $2 f_{\text{emdr}}$) through a sinusoidal `Tone.Panner`:
+
+$$\text{Pan}(t) = W \cdot \sin(2\pi f_{\text{emdr}} t), \quad f_{\text{emdr}} \in [0.2, 1.5]\text{ Hz},\ W \in [0, 1]$$
+
+Simultaneously, `SanctuaryCanvas.renderBilateralVisualGrounding` queries `audioEngine.getBilateralPanPosition(t)` at 60fps to render left/right edge luminescence pillars and a horizontal eye-tracking orb locked in phase with the audio panner.
+
+### 4. Somatic Sub-Bass ($40\text{–}60\text{ Hz}$) & $6\text{ Hz}$ Binaural Theta Entrainment
+- **Somatic Sub-Bass Anchor:** A pure sine oscillator (`somaticSubOsc`) locked to the active seed's sub-fundamental in the $43.65\text{ Hz} – 55.0\text{ Hz}$ band (`F1 = 43.65 Hz`, `G1 = 49.0 Hz`, `A1 = 55.0 Hz`) routed directly to `masterGain` (bypassing the $1100\text{ Hz}$ vocal-carving filter) for physical room or headphone grounding.
+- **Binaural Theta Entrainment:** Two hard-panned pure sine oscillators (`binauralLeftOsc` at $100\text{ Hz}$, `pan = -1.0`; `binauralRightOsc` at $106\text{ Hz}$, `pan = +1.0`) producing a perceptual $6\text{ Hz}$ Theta binaural beat in the superior olivary complex during headphone sessions.
+
+---
+
+## 6. Procedural 2D Atmospheric Rendering Pipeline
+
+To keep the native binary compact and GPU-friendly across integrated graphics, `SanctuaryCanvas.ts` implements custom atmospheric effects in hardware-accelerated HTML5 2D Canvas:
+- **Luminance Palette Morphing:** Primary and accent HSL hues interpolate continuously from deep slate-indigo ($234^\circ$) through cyan ($193^\circ$) to warm solar amber ($42^\circ$).
+- **Viscous Trail Ring Buffers:** Each satellite maintains a ring buffer of historical screen coordinates whose length scales dynamically with `viscosity` ($14$ to $86$ vertices), rendered with quadratic alpha tapering and canvas Gaussian blur (`ctx.filter = blur(...)`) driven by `fog`.
+- **Nostalgia Procedural Film Grain & Tape Jitter:** An offscreen $180 \times 180$ RGBA noise tile is pre-generated at startup and tiled across the viewport with sub-frame UV offsets and a radial sepia vignette, while satellite screen coordinates receive a deterministic multi-sine positional jitter proportional to `nostalgia`.
+
+---
+
+## 7. Rust / Tauri v1 Native Backend & Binary Optimization
+
+Implemented in [`src-tauri/src/main.rs`](./src-tauri/src/main.rs) and [`src-tauri/Cargo.toml`](./src-tauri/Cargo.toml):
+- **Schema-Validated Persistence:** The `save_constellation_json` and `load_constellation_json` Tauri commands validate every preset file against `ConstellationFilePayload` via `serde` and `serde_json` before reading or writing to the OS AppData directory (`$APPDATA/constellations/*.aether.json`) or user-selected file paths.
+- **Minimal Binary Footprint:** The Rust `[profile.release]` configuration enables Link-Time Optimization (`lto = true`), single codegen unit (`codegen-units = 1`), size optimization (`opt-level = "z"`), symbol stripping (`strip = true`), and `panic = "abort"`, producing a tiny native executable without bundling Chromium.
+
+---
+
+# Part III: For Developers (Building from Source)
+
+## 1. Prerequisites
+
+To compile Aetherium from source, install:
+1. **Node.js** (v18+ or v20+ LTS) and `npm`
+2. **Rust Toolchain** (`rustup` / `cargo` stable): [https://rustup.rs](https://rustup.rs)
+3. **Tauri v1 OS System Dependencies:**
+   - **macOS:** Xcode Command Line Tools (`xcode-select --install`)
+   - **Ubuntu / Debian Linux:**
+     ```bash
+     sudo apt-get update
+     sudo apt-get install -y libwebkit2gtk-4.0-dev libasound2-dev build-essential curl wget file libssl-dev libgtk-3-dev libayatana-appindicator3-dev librsvg2-dev
+     ```
+   - **Windows:** Microsoft Visual Studio C++ Build Tools & WebView2 Runtime (pre-installed on Windows 10/11).
+
+## 2. Build & Run Commands
+
+Only two commands are required to install dependencies and compile the native desktop installer for your platform:
+
+```bash
+# 1. Install TypeScript, Vite, Tone.js, Tonal, and Tauri CLI dependencies
+npm install
+
+# 2. Compile the optimized native desktop application (.dmg, .msi/.exe, or .AppImage/.deb)
+npm run tauri build
+```
+
+For live hot-reload development:
+
+```bash
+# Run in native Tauri desktop development window
+npm run tauri dev
+
+# Or run the frontend in a standard web browser at http://localhost:1420
+npm run dev
+```
+
+## 3. Repository File Structure
+
+```text
+Aetherium/
+├── .github/workflows/release.yml   # Cross-platform CI/CD matrix (macOS, Linux, Windows)
+├── README.md                       # Documentation (English)
+├── README.ro.md                    # Documentation (Romanian / Română)
+├── src-tauri/                      # Rust Tauri v1 backend & native OS window/filesystem config
+│   ├── Cargo.toml                  # Size-optimized Rust release profile (opt-level = "z", LTO)
+│   ├── tauri.conf.json             # 1280x800 dark sanctuary window & scoped FS/Dialog allowlist
+│   └── src/main.rs                 # Native JSON constellation save/load commands
+└── src/
+    ├── main.ts                     # Application bootstrap
+    ├── state/store.ts              # Reactive store & ISO-Principle vector interpolation engine
+    ├── audio/
+    │   ├── HarmonicEngine.ts       # Luminance modal quantization & orbital register mapping
+    │   └── AudioEngine.ts          # 3-layer procedural Tone.js synth + clinical DSP bus
+    ├── canvas/
+    │   └── SanctuaryCanvas.ts      # 60fps Keplerian orbital physics, Meridian & EMDR shaders
+    └── components/
+        ├── OnboardingModal.ts      # "Select Your Space" initial launch modal
+        ├── TopBar.ts               # Mode switcher pill, telemetry & JSON export/import
+        ├── PoeticDock.ts           # Bottom Seed selector, 4 Macro sliders, Rarity & Sleep Timer
+        └── PractitionerDock.ts     # Collapsible lateral clinical suite (Dialogue EQ, ISO Arc, EMDR)
+```
+
+---
+
+## License
+
+Released under the **MIT License**. Built with care by **Voidwave Lab**.
