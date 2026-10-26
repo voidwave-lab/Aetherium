@@ -183,7 +183,9 @@ export function encodeWAV(
  */
 export class AudioRecorder {
   private rawContext: AudioContext | null = null;
-  private tapGainNode: GainNode | null = null;
+  private nativeAudioContext: AudioContext | null = null;
+  private tapGainNode: Tone.Gain | null = null;
+  private nativeTapBridgeNode: GainNode | null = null;
   private silentSinkNode: GainNode | null = null;
   private scriptCollectorNode: ScriptProcessorNode | null = null;
   private mediaStreamGainNode: GainNode | null = null;
@@ -207,57 +209,83 @@ export class AudioRecorder {
 
   /**
    * Attaches the recording tap right after the Master Limiter in `AudioEngine.ts`.
+   * Safely bridges Tone.js / `standardized-audio-context` wrapper nodes and native WebKit
+   * AudioContext nodes without throwing during `initializeDspGraph()`.
    */
   public attachToMasterBus(masterNode: Tone.ToneAudioNode): void {
-    const rawCtx = Tone.getContext().rawContext as AudioContext;
-    if (!rawCtx) return;
+    try {
+      const stdCtx = Tone.getContext().rawContext as AudioContext & {
+        _nativeAudioContext?: AudioContext;
+        _nativeContext?: AudioContext;
+      };
+      if (!stdCtx) return;
 
-    this.rawContext = rawCtx;
-    this.capturedSampleRate = rawCtx.sampleRate || 48000;
+      const nativeCtx: AudioContext =
+        stdCtx._nativeAudioContext ?? stdCtx._nativeContext ?? stdCtx;
 
-    // Create a unity-gain tap node connected from the Tone.js Master Limiter
-    this.tapGainNode = rawCtx.createGain();
-    this.tapGainNode.gain.value = 1.0;
-    Tone.connect(masterNode, this.tapGainNode);
+      this.rawContext = stdCtx;
+      this.nativeAudioContext = nativeCtx;
+      this.capturedSampleRate = nativeCtx.sampleRate || stdCtx.sampleRate || 48000;
 
-    // 1. Stereo PCM Buffer Collector for Format A (Lossless 16-bit WAV)
-    // Uses native ScriptProcessorNode (4096 frames, 2 in, 2 out) routed into a 0-gain silent sink
-    // so it runs reliably across macOS WKWebView, Windows WebView2, Linux WebKitGTK, and browsers.
-    this.silentSinkNode = rawCtx.createGain();
-    this.silentSinkNode.gain.value = 0.0;
-    this.silentSinkNode.connect(rawCtx.destination);
+      // Create a Tone.Gain tap node so `masterNode.connect(this.tapGainNode)` stays 100% within Tone.js / standardized-audio-context
+      this.tapGainNode = new Tone.Gain(1.0);
+      masterNode.connect(this.tapGainNode);
 
-    this.scriptCollectorNode = rawCtx.createScriptProcessor(4096, 2, 2);
-    this.scriptCollectorNode.onaudioprocess = (event: AudioProcessingEvent) => {
-      if (!this.isCapturing) return;
-      const inputBuffer = event.inputBuffer;
-      const ch0 = inputBuffer.getChannelData(0);
-      const ch1 = inputBuffer.numberOfChannels > 1 ? inputBuffer.getChannelData(1) : ch0;
+      // Extract the underlying native AudioNode from Tone.Gain so we can connect to native ScriptProcessorNode
+      const tapInternal = (this.tapGainNode as unknown as {
+        _gainNode?: { _nativeAudioNode?: AudioNode };
+        input?: { _nativeAudioNode?: AudioNode };
+      });
+      const nativeSourceNode: AudioNode | null =
+        tapInternal._gainNode?._nativeAudioNode ??
+        tapInternal.input?._nativeAudioNode ??
+        null;
 
-      const copyL = new Float32Array(ch0.length);
-      const copyR = new Float32Array(ch1.length);
-      copyL.set(ch0);
-      copyR.set(ch1);
+      if (nativeSourceNode && typeof nativeCtx.createScriptProcessor === 'function') {
+        this.nativeTapBridgeNode = nativeCtx.createGain();
+        this.nativeTapBridgeNode.gain.value = 1.0;
+        nativeSourceNode.connect(this.nativeTapBridgeNode);
 
-      this.leftChunks.push(copyL);
-      this.rightChunks.push(copyR);
-      this.totalCapturedFrames += copyL.length;
-    };
+        this.silentSinkNode = nativeCtx.createGain();
+        this.silentSinkNode.gain.value = 0.0;
+        this.silentSinkNode.connect(nativeCtx.destination);
 
-    this.tapGainNode.connect(this.scriptCollectorNode);
-    this.scriptCollectorNode.connect(this.silentSinkNode);
+        this.scriptCollectorNode = nativeCtx.createScriptProcessor(4096, 2, 2);
+        this.scriptCollectorNode.onaudioprocess = (event: AudioProcessingEvent) => {
+          if (!this.isCapturing) return;
+          const inputBuffer = event.inputBuffer;
+          const ch0 = inputBuffer.getChannelData(0);
+          const ch1 = inputBuffer.numberOfChannels > 1 ? inputBuffer.getChannelData(1) : ch0;
 
-    // 2. MediaStreamAudioDestinationNode for Format B (Compact 256 kbps .webm / .ogg)
-    if (typeof rawCtx.createMediaStreamDestination === 'function') {
-      try {
-        this.mediaStreamGainNode = rawCtx.createGain();
-        this.mediaStreamGainNode.gain.value = 1.0;
-        this.mediaStreamDest = rawCtx.createMediaStreamDestination();
-        this.tapGainNode.connect(this.mediaStreamGainNode);
-        this.mediaStreamGainNode.connect(this.mediaStreamDest);
-      } catch {
-        this.mediaStreamDest = null;
+          const copyL = new Float32Array(ch0.length);
+          const copyR = new Float32Array(ch1.length);
+          copyL.set(ch0);
+          copyR.set(ch1);
+
+          this.leftChunks.push(copyL);
+          this.rightChunks.push(copyR);
+          this.totalCapturedFrames += copyL.length;
+        };
+
+        this.nativeTapBridgeNode.connect(this.scriptCollectorNode);
+        this.scriptCollectorNode.connect(this.silentSinkNode);
       }
+
+      // 2. MediaStreamAudioDestinationNode for Format B (Compact 256 kbps .webm / .ogg)
+      if (this.nativeTapBridgeNode && typeof nativeCtx.createMediaStreamDestination === 'function') {
+        try {
+          this.mediaStreamGainNode = nativeCtx.createGain();
+          this.mediaStreamGainNode.gain.value = 1.0;
+          this.mediaStreamDest = nativeCtx.createMediaStreamDestination();
+          this.nativeTapBridgeNode.connect(this.mediaStreamGainNode);
+          this.mediaStreamGainNode.connect(this.mediaStreamDest);
+        } catch {
+          this.mediaStreamDest = null;
+        }
+      }
+    } catch (err) {
+      // Never allow a recording tap error to block the main sanctuary DSP graph
+      console.warn('[Aetherium] Recorder tap initialization skipped:', err);
     }
   }
 
@@ -280,13 +308,14 @@ export class AudioRecorder {
     this.lastCompactBytes = null;
     this.lastTargetMinutes = targetDurationMinutes ?? null;
 
-    if (this.rawContext) {
-      this.capturedSampleRate = this.rawContext.sampleRate || 48000;
+    const activeNativeCtx = this.nativeAudioContext ?? this.rawContext;
+    if (activeNativeCtx) {
+      this.capturedSampleRate = activeNativeCtx.sampleRate || 48000;
     }
 
     // Apply smooth 2-second fade-in on the MediaStream recording feed as well
-    if (this.rawContext && this.mediaStreamGainNode) {
-      const now = this.rawContext.currentTime;
+    if (activeNativeCtx && this.mediaStreamGainNode) {
+      const now = activeNativeCtx.currentTime;
       this.mediaStreamGainNode.gain.cancelScheduledValues(now);
       this.mediaStreamGainNode.gain.setValueAtTime(0.0001, now);
       this.mediaStreamGainNode.gain.linearRampToValueAtTime(1.0, now + FADE_IN_DURATION_SEC);
@@ -328,13 +357,14 @@ export class AudioRecorder {
       const currentRec = store.getState().recording;
 
       // Schedule smooth 3-second fade-out on the MediaStream node right before timed completion
+      const tickNativeCtx = this.nativeAudioContext ?? this.rawContext;
       if (
         currentRec.targetDurationSec !== null &&
-        this.rawContext &&
+        tickNativeCtx &&
         this.mediaStreamGainNode &&
         currentRec.targetDurationSec - elapsedSec === Math.ceil(FADE_OUT_DURATION_SEC)
       ) {
-        const now = this.rawContext.currentTime;
+        const now = tickNativeCtx.currentTime;
         this.mediaStreamGainNode.gain.cancelScheduledValues(now);
         this.mediaStreamGainNode.gain.setValueAtTime(1.0, now);
         this.mediaStreamGainNode.gain.linearRampToValueAtTime(
