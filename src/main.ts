@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
  * Copyright (C) 2026 Voidwave Lab
@@ -21,6 +22,7 @@ import './styles/main.css';
 import { AudioEngine } from './audio/AudioEngine';
 import { HarmonicEngine } from './audio/HarmonicEngine';
 import { SanctuaryCanvas } from './canvas/SanctuaryCanvas';
+import { AboutModal } from './components/AboutModal';
 import { OnboardingModal } from './components/OnboardingModal';
 import { PoeticDock } from './components/PoeticDock';
 import { PractitionerDock } from './components/PractitionerDock';
@@ -52,6 +54,7 @@ function bootstrapAetherium(): void {
   const practitionerDock = new PractitionerDock(appContainer, audioEngine);
   new PoeticDock(appContainer, audioEngine);
   new OnboardingModal(appContainer, audioEngine);
+  new AboutModal(appContainer);
 
   // Forward custom event to optional global callback handler if attached by external scripts/tests
   window.addEventListener('onSatelliteTrigger', (event: Event) => {

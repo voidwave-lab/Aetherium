@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
  * Copyright (C) 2026 Voidwave Lab
@@ -130,11 +131,20 @@ export class OnboardingModal {
           </button>
         </div>
 
-        <!-- Subtle footer note & GPLv3 Appropriate Legal Notice -->
-        <div class="mt-7 text-center text-[11px] text-slate-500 font-mono space-y-1">
+        <!-- Subtle footer note, GPLv3 Legal Notice & Ethics / Bibliography Button -->
+        <div class="mt-7 text-center text-[11px] text-slate-500 font-mono space-y-2">
           <div>Keplerian Harmonic Engine · Zero-Telemetry Local Execution · Press ESC to dismiss</div>
           <div class="text-[10px] text-slate-600">
             Copyright (C) 2026 Voidwave Lab · Free Software under GNU GPL v3.0 (No Warranty)
+          </div>
+          <div class="pt-1">
+            <button
+              type="button"
+              id="btn-onboarding-open-about"
+              class="inline-flex items-center gap-1.5 px-3.5 py-1 rounded-full bg-slate-900/75 hover:bg-slate-800/90 text-[11px] font-mono text-indigo-300 hover:text-indigo-100 border border-slate-700/60 hover:border-indigo-400/40 transition-colors"
+            >
+              <span>ⓘ Ethics, Credits &amp; Bibliography</span>
+            </button>
           </div>
         </div>
       </div>
@@ -147,6 +157,11 @@ export class OnboardingModal {
         store.setMode(selected, true);
         this.audioEngine.ensureStartedFromGesture();
       });
+    });
+
+    const openAboutBtn = this.root.querySelector('#btn-onboarding-open-about');
+    openAboutBtn?.addEventListener('click', () => {
+      store.setAboutOpen(true);
     });
 
     window.addEventListener('keydown', (e: KeyboardEvent) => {

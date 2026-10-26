@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
  * Copyright (C) 2026 Voidwave Lab
@@ -289,6 +290,7 @@ export interface AetheriumState {
   mode: OperatingMode;
   hasCompletedOnboarding: boolean;
   isOnboardingOpen: boolean;
+  isAboutOpen: boolean;
   activeSeedId: SeedId;
   macros: MacroParams;
   satellites: SatelliteNode[];
@@ -661,6 +663,7 @@ class AetheriumStore {
       mode: savedMode ?? 'explorer',
       hasCompletedOnboarding: false,
       isOnboardingOpen: true,
+      isAboutOpen: false,
       activeSeedId: defaultSeed.id,
       macros: { ...defaultSeed.defaultMacros },
       satellites: createSatellitesForPreset(defaultSeed),
@@ -852,6 +855,14 @@ class AetheriumStore {
     this.state = {
       ...this.state,
       isOnboardingOpen: isOpen,
+    };
+    this.emit();
+  }
+
+  public setAboutOpen(isOpen: boolean): void {
+    this.state = {
+      ...this.state,
+      isAboutOpen: isOpen,
     };
     this.emit();
   }

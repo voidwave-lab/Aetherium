@@ -2,6 +2,10 @@
 
 **Sanctuar Desktop de Muzică Ambientală Generativă și Meloterapie Receptivă**
 
+[![Licență: GPL v3](https://img.shields.io/badge/License-GPLv3%2B-emerald.svg)](./LICENSE)
+[![Confidențialitate: 100% Offline & Zero Telemetrie](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Telemetry-indigo.svg)](#partea-iv-etică-credite-open-source-bibliografie-academică-și-licența-gnu-gpl-v30)
+[![Audio: 100% DSP Procedural](https://img.shields.io/badge/Audio-100%25%20Procedural%20DSP%20(Zero%20Samples)-cyan.svg)](#4-graful-dsp-web-audio-procedural-multi-strat-și-psihoacustic)
+
 > 🌐 **Limba / Language:** [**Română (`README.ro.md`)**](./README.ro.md) | [**English (`README.md`)**](./README.md)
 
 Aetherium este o aplicație desktop nativă, gratuită, open-source și ultra-ușoară pentru **macOS**, **Windows** și **Linux**. Sintetizează în timp real peisaje sonore ambientale și clinice continue, care nu se repetă niciodată—fără a necesita pregătire muzicală, conexiune la internet sau fișiere audio externe.
@@ -28,6 +32,12 @@ Aplicația este concepută pentru două categorii distincte de utilizatori:
    - [Pipeline-ul Procedural de Randare Atmosferică 2D](#8-pipeline-ul-procedural-de-randare-atmosferică-2d)
    - [Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor](#9-backend-ul-nativ-rust--tauri-v1-și-optimizarea-binarelor)
 3. [Partea III: Pentru Dezvoltatori (Compilarea din Codul Sursă)](#partea-iii-pentru-dezvoltatori-compilarea-din-codul-sursă)
+4. [Partea IV: Etică, Credite Open-Source, Bibliografie Academică și Licența GNU GPL v3.0](#partea-iv-etică-credite-open-source-bibliografie-academică-și-licența-gnu-gpl-v30)
+   - [A. Filosofia Bunurilor Comune (Commons) și Atribuirea Etică AI](#a-filosofia-bunurilor-comune-commons-și-atribuirea-etică-ai)
+   - [B. Ecosistemul Open-Source și Linkuri Directe către Depozite](#b-ecosistemul-open-source-și-linkuri-directe-către-depozite)
+   - [C. Bibliografie Fundamentală (DSP, Muzică Generativă și Psihoacustică)](#c-bibliografie-fundamentală-dsp-muzică-generativă-și-psihoacustică)
+   - [D. Declinarea Responsabilității Clinice și Terapeutice](#d-declinarea-responsabilității-clinice-și-terapeutice)
+   - [E. Garanția „Liber pentru Totdeauna" (Rezumat GNU GPL v3.0)](#e-garanția-liber-pentru-totdeauna-rezumat-gnu-gpl-v30)
 
 ---
 
@@ -450,18 +460,76 @@ Aetherium/
     ├── canvas/
     │   └── SanctuaryCanvas.ts      # Fizică kepleriană la 60fps, Meridian, comete, aurore & EMDR
     └── components/
+        ├── AboutModal.ts           # Fereastra modală "ⓘ Ethics, Credits & Bibliography"
         ├── OnboardingModal.ts      # Fereastra modală de selecție a spațiului la lansare
-        ├── TopBar.ts               # Comutator de mod, telemetrie & export/import JSON
+        ├── TopBar.ts               # Comutator de mod, buton Etică/Bibliografie, telemetrie & JSON
         ├── PoeticDock.ts           # 8 Seeds, 6 glisoare Macro, Capture Sanctuary & Modal Export
         └── PractitionerDock.ts     # Suita clinică laterală (Dialogue EQ, Arc ISO, EMDR, Take-Home Anchor)
 ```
 
 ---
 
-## Licență
+# Partea IV: Etică, Credite Open-Source, Bibliografie Academică și Licența GNU GPL v3.0
+
+> 💡 *În aplicație, apăsați butonul **`ⓘ Ethics, Credits & Bibliography`** din bara superioară sau din ecranul inițial de selecție a spațiului pentru a consulta oricând aceste informații.*
+
+## A. Filosofia Bunurilor Comune (Commons) și Atribuirea Etică AI
+
+Deși direcția artistică, conceptul orbital keplerian neliniar, maparea psihoacustică și fluxurile de meloterapie receptivă ale proiectului **Aetherium** au fost concepute uman, implementarea tehnică a fost accelerată cu asistență AI antrenată pe munca colectivă a mii de dezvoltatori open-source, matematicieni, teoreticieni muzicali și ingineri de procesare a semnalului (DSP).
+
+Deoarece acest sanctuar se sprijină pe decenii de cunoaștere umană partajată și cod open-source, publicarea Aetherium sub licența strict copyleft **GNU General Public License v3.0 (`GPL-3.0-or-later`)** reprezintă angajamentul nostru moral de a întoarce această lucrare patrimoniului comun—garantând **confidențialitate 100% offline**, **zero telemetrie**, **zero bariere comerciale** și imunitate permanentă împotriva închiderii proprietare.
+
+---
+
+## B. Ecosistemul Open-Source și Linkuri Directe către Depozite
+
+Recunoștință profundă autorilor și comunităților din spatele proiectelor open-source care stau la baza Aetherium:
+
+- [**Tauri** (`https://github.com/tauri-apps/tauri`)](https://github.com/tauri-apps/tauri) — Framework nativ multi-platformă construit în Rust.
+- [**Tone.js** (`https://github.com/Tonejs/Tone.js`)](https://github.com/Tonejs/Tone.js) — Framework Web Audio pentru muzică interactivă și sinteză procedurală în timp real.
+- [**Tonal** (`https://github.com/tonaljs/tonal`)](https://github.com/tonaljs/tonal) — Bibliotecă funcțională de teorie muzicală pentru game armonice, cuantizare modală și intervale.
+- [**Vite** (`https://github.com/vitejs/vite`)](https://github.com/vitejs/vite) & [**TypeScript** (`https://github.com/microsoft/TypeScript`)](https://github.com/microsoft/TypeScript) — Unelte de compilare frontend și siguranță statică a tipurilor.
+- [**Rust Language & Audio Ecosystem** (`https://www.rust-lang.org`)](https://www.rust-lang.org) — Fundație sigură pentru programarea de sistem.
+
+---
+
+## C. Bibliografie Fundamentală (DSP, Muzică Generativă și Psihoacustică)
+
+### 1. Procesarea Digitală a Semnalului (DSP) și Sinteza prin Modelare Fizică
+- **Karplus, K., & Strong, A. (1983).** *"Digital Synthesis of Plucked-String and Drum Timbres."* *Computer Music Journal*, 7(2), 43–55. *(Baza teoretică pentru sinteza coardelor ciupite și a harpei în Bowed Glass & Strings).*
+- **Smith, J. O. (2010).** *Physical Audio Signal Processing: For Virtual Musical Instruments and Audio Effects.* W3K Publishing / CCRMA Stanford. *(Fundamentul pentru rețele de ghiduri de undă, rezonanță modală metalică în Singing Bowls și filtre formantice în Cathedral Choir).*
+- **Farnell, A. (2010).** *Designing Sound.* MIT Press. *(Fundamentul pentru generarea procedurală a ploi, vântului și texturii de vinil pur din zgomot matematic și filtre, fără eșantioane audio externe).*
+- **Roads, C. (2001).** *Microsound.* MIT Press. *(Baza teoretică pentru texturile ambientale granulare și stocastice).*
+
+### 2. Teoria Muzicii Generative și Ambientale
+- **Eno, B. (1978).** *Ambient 1: Music for Airports* (Note de album & Manifestul Muzicii Generative) — *Definirea muzicii ambientale ca fiind „capabilă să susțină mai multe niveluri de atenție auditivă fără a impune unul anume; la fel de ușor de ignorat pe cât este de interesantă."*
+- **Basinski, W. (2002).** *The Disintegration Loops* — *Inspirația conceptuală pentru macro-controlul „Nostalgia", uzura benzii magnetice și mecanica entropiei organice („Rarity").*
+
+### 3. Meloterapie Receptivă, Principiul ISO și Psihoacustică Clinică
+- **Altshuler, I. M. (1948).** *"A Psychiatrist's Experience with Music as a Therapeutic Agent."* În *Music and Medicine*. *(Originea **Principiului ISO**—oglindirea stării afective/autonome a pacientului înainte de ghidarea graduală către reglare).*
+- **Grocke, D., & Wigram, T. (2007).** *Receptive Methods in Music Therapy: Techniques and Clinical Applications for Music Therapy Clinicians, Educators and Students.* Jessica Kingsley Publishers.
+- **Porges, S. W. (2011).** *The Polyvagal Theory: Neurophysiological Foundations of Emotions, Attachment, Communication, and Self-Regulation.* W. W. Norton & Company. *(Baza științifică pentru sculptarea acustică a spectrului vocal la 1100 Hz și indiciile prozodice de siguranță vagală).*
+- **Shapiro, F. (2018).** *Eye Movement Desensitization and Reprocessing (EMDR) Therapy: Basic Principles, Protocols, and Procedures.* Guilford Press. *(Fundamentul clinic pentru panoramarea bilaterală audio-vizuală 0.2–1.5 Hz și garda de siguranță Serendipity).*
+- **Oster, G. (1973).** *"Auditory Beats in the Brain."* *Scientific American*, 229(4), 94–102. *(Baza neuroacustică pentru antrenarea binaurală perceptivă de joasă frecvență Theta la 6 Hz).*
+
+---
+
+## D. Declinarea Responsabilității Clinice și Terapeutice
+
+Modul **Practitioner / Guide** este un instrument auxiliar de meloterapie receptivă și co-reglare psihoacustică, conceput pentru a sprijini specialiștii calificați în sănătate mintală, meloterapeuții și autoreglarea personală. Aplicația **nu** este un dispozitiv medical și nu înlocuiește diagnosticul medical, psihoterapia sau tratamentul psihiatric de specialitate.
+
+---
+
+## E. Garanția „Liber pentru Totdeauna" (Rezumat GNU GPL v3.0)
 
 Copyright (C) 2026 **Voidwave Lab**.
 
 Acest program este software liber: îl puteți redistribui și/sau modifica în conformitate cu termenii **Licenței Publice Generale GNU (GNU General Public License)** publicate de Free Software Foundation, fie **versiunea 3** a Licenței, fie (la alegerea dumneavoastră) orice versiune ulterioară (`GPL-3.0-or-later`).
+
+Aveți libertatea irevocabilă de a:
+1. **Rula** programul în orice scop (personal, academic sau clinic).
+2. **Studia** modul în care funcționează programul și de a-i adapta modelele matematice și psihoacustice.
+3. **Distribui** copii gratuit pacienților, studenților, colegilor și comunității.
+4. **Modifica** și îmbunătăți programul, cu condiția strictă copyleft ca orice lucrare derivată sau redistribuire să rămână liberă și open-source sub aceeași licență **GNU GPL v3.0**.
 
 Consultați fișierul [`LICENSE`](./LICENSE) pentru textul integral al licenței.

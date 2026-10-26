@@ -1,3 +1,4 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
 /**
  * Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
  * Copyright (C) 2026 Voidwave Lab
@@ -120,6 +121,17 @@ export class TopBar {
             </button>
           </div>
 
+          <!-- Ethics, Credits & Academic Bibliography Button -->
+          <button
+            type="button"
+            id="btn-open-about-modal"
+            title="Open Ethics, Open-Source Credits & Academic Bibliography"
+            class="glass-pill flex items-center gap-1.5 px-3 py-1.5 rounded-full text-[11px] font-mono text-slate-300 hover:text-indigo-200 transition-colors"
+          >
+            <span class="text-indigo-400">ⓘ</span>
+            <span class="hidden md:inline">Ethics, Credits &amp; Bibliography</span>
+          </button>
+
           <!-- Top-Right Mode Switcher Pill Button -->
           <button
             type="button"
@@ -148,6 +160,11 @@ export class TopBar {
     const openModalBtn = this.root.querySelector('#btn-open-space-modal');
     openModalBtn?.addEventListener('click', () => {
       store.setOnboardingOpen(true);
+    });
+
+    const openAboutBtn = this.root.querySelector('#btn-open-about-modal');
+    openAboutBtn?.addEventListener('click', () => {
+      store.setAboutOpen(true);
     });
 
     const modeSwitchBtn = this.root.querySelector('#btn-mode-switcher-pill');

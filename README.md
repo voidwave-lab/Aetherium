@@ -2,6 +2,10 @@
 
 **Generative Ambient Soundscape & Receptive Music Therapy Desktop Sanctuary**
 
+[![License: GPL v3](https://img.shields.io/badge/License-GPLv3%2B-emerald.svg)](./LICENSE)
+[![Privacy: 100% Offline & Zero Telemetry](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Telemetry-indigo.svg)](#part-iv-ethics-open-source-credits-academic-bibliography--gnu-gpl-v30-license)
+[![Audio: 100% Procedural DSP](https://img.shields.io/badge/Audio-100%25%20Procedural%20DSP%20(Zero%20Samples)-cyan.svg)](#4-multi-layer-procedural-web-audio--psychoacoustic-dsp-graph)
+
 > 🌐 **Language / Limba:** [**English (`README.md`)**](./README.md) | [**Română (`README.ro.md`)**](./README.ro.md)
 
 Aetherium is a free, open-source, lightweight native desktop application for **macOS**, **Windows**, and **Linux**. It synthesizes continuous, never-repeating ambient music and clinical soundscapes in real time—requiring zero musical training, zero internet connection, and zero external audio samples.
@@ -28,6 +32,12 @@ It is designed for two distinct user groups:
    - [Procedural 2D Atmospheric Rendering Pipeline](#8-procedural-2d-atmospheric-rendering-pipeline)
    - [Rust / Tauri v1 Native Backend & Binary Optimization](#9-rust--tauri-v1-native-backend--binary-optimization)
 3. [Part III: For Developers (Building from Source)](#part-iii-for-developers-building-from-source)
+4. [Part IV: Ethics, Open-Source Credits, Academic Bibliography & GNU GPL v3.0 License](#part-iv-ethics-open-source-credits-academic-bibliography--gnu-gpl-v30-license)
+   - [A. The Commons Philosophy & Ethical AI Attribution](#a-the-commons-philosophy--ethical-ai-attribution)
+   - [B. Open-Source Ecosystem & Direct Repository Links](#b-open-source-ecosystem--direct-repository-links)
+   - [C. Foundational Bibliography (DSP, Generative Music & Psychoacoustics)](#c-foundational-bibliography-dsp-generative-music--psychoacoustics)
+   - [D. Clinical & Therapeutic Disclaimer](#d-clinical--therapeutic-disclaimer)
+   - [E. Free Forever Guarantee (GNU GPL v3.0 Summary)](#e-free-forever-guarantee-gnu-gpl-v30-summary)
 
 ---
 
@@ -450,18 +460,76 @@ Aetherium/
     ├── canvas/
     │   └── SanctuaryCanvas.ts      # 60fps Keplerian physics, Meridian, comets, auroras & EMDR glow
     └── components/
+        ├── AboutModal.ts           # "ⓘ Ethics, Credits & Bibliography" modal (Commons, Links, Bibliography)
         ├── OnboardingModal.ts      # "Select Your Space" initial launch modal
-        ├── TopBar.ts               # Mode switcher pill, telemetry & JSON export/import
+        ├── TopBar.ts               # Mode switcher pill, Ethics button, telemetry & JSON export/import
         ├── PoeticDock.ts           # 8 Seed presets, 6 Poetic sliders, Live Capture & Export Modal
         └── PractitionerDock.ts     # Collapsible clinical suite (Dialogue EQ, ISO Arc, EMDR, Take-Home Anchor)
 ```
 
 ---
 
-## License
+# Part IV: Ethics, Open-Source Credits, Academic Bibliography & GNU GPL v3.0 License
+
+> 💡 *In the application, click the **`ⓘ Ethics, Credits & Bibliography`** button in the top bar or on the initial Onboarding screen to view this information at any time.*
+
+## A. The Commons Philosophy & Ethical AI Attribution
+
+While the artistic direction, non-linear Keplerian orbital concept, psychoacoustic mapping, and receptive music therapy workflows of **Aetherium** were human-conceived, its engineering implementation was accelerated with AI assistance trained on the collective work of thousands of open-source developers, mathematicians, music theorists, and audio DSP engineers.
+
+Because this sanctuary stands on the shoulders of decades of shared human scholarship and open-source code, releasing Aetherium under the strict copyleft **GNU General Public License v3.0 (`GPL-3.0-or-later`)** is our moral commitment to return this work to the commons—ensuring **100% offline privacy**, **zero telemetry**, **zero commercial paywalls**, and permanent immunity to proprietary enclosure.
+
+---
+
+## B. Open-Source Ecosystem & Direct Repository Links
+
+Deep gratitude to the maintainers and contributors of the open-source projects powering Aetherium:
+
+- [**Tauri** (`https://github.com/tauri-apps/tauri`)](https://github.com/tauri-apps/tauri) — Rust-based cross-platform native application framework.
+- [**Tone.js** (`https://github.com/Tonejs/Tone.js`)](https://github.com/Tonejs/Tone.js) — Web Audio framework for interactive music and procedural synthesis in the browser.
+- [**Tonal** (`https://github.com/tonaljs/tonal`)](https://github.com/tonaljs/tonal) — Functional music theory library for harmonic scales, modal quantization, and intervals.
+- [**Vite** (`https://github.com/vitejs/vite`)](https://github.com/vitejs/vite) & [**TypeScript** (`https://github.com/microsoft/TypeScript`)](https://github.com/microsoft/TypeScript) — Frontend build tooling and strict static type safety.
+- [**Rust Language & Audio Ecosystem** (`https://www.rust-lang.org`)](https://www.rust-lang.org) — Memory-safe systems programming foundation.
+
+---
+
+## C. Foundational Bibliography (DSP, Generative Music & Psychoacoustics)
+
+### 1. Digital Signal Processing & Physical Modeling Synthesis
+- **Karplus, K., & Strong, A. (1983).** *"Digital Synthesis of Plucked-String and Drum Timbres."* *Computer Music Journal*, 7(2), 43–55. *(Foundation for our sympathetic plucked string/harp synthesis in Bowed Glass & Strings).*
+- **Smith, J. O. (2010).** *Physical Audio Signal Processing: For Virtual Musical Instruments and Audio Effects.* W3K Publishing / CCRMA Stanford. *(Foundation for waveguide delay networks, Euler-Bernoulli metallic modal resonance in Singing Bowls, and formant filter design in Cathedral Choir).*
+- **Farnell, A. (2010).** *Designing Sound.* MIT Press. *(Foundation for procedural soundscaping—generating rain, wind, and organic vinyl textures purely from mathematical noise and filters without external audio samples).*
+- **Roads, C. (2001).** *Microsound.* MIT Press. *(Theoretical foundation for granular, stochastic, and cloud-based ambient textures).*
+
+### 2. Generative & Ambient Music Theory
+- **Eno, B. (1978).** *Ambient 1: Music for Airports* (Liner Notes & Generative Music Manifesto) — *Defining ambient music as "able to accommodate many levels of listening attention without enforcing one in particular; as ignorable as it is interesting."*
+- **Basinski, W. (2002).** *The Disintegration Loops* — *Conceptual inspiration for our "Nostalgia" macro, analog tape wear, and organic entropy mechanics ("Rarity").*
+
+### 3. Receptive Music Therapy, ISO Principle & Clinical Psychoacoustics
+- **Altshuler, I. M. (1948).** *"A Psychiatrist's Experience with Music as a Therapeutic Agent."* In *Music and Medicine*. *(Origin of the **ISO Principle**—matching a patient's initial affective/autonomic state before gradually vectoring toward parasympathetic regulation).*
+- **Grocke, D., & Wigram, T. (2007).** *Receptive Methods in Music Therapy: Techniques and Clinical Applications for Music Therapy Clinicians, Educators and Students.* Jessica Kingsley Publishers.
+- **Porges, S. W. (2011).** *The Polyvagal Theory: Neurophysiological Foundations of Emotions, Attachment, Communication, and Self-Regulation.* W. W. Norton & Company. *(Scientific basis for our 1100 Hz Vocal-Range Acoustic Carving and prosodic safety cues).*
+- **Shapiro, F. (2018).** *Eye Movement Desensitization and Reprocessing (EMDR) Therapy: Basic Principles, Protocols, and Procedures.* Guilford Press. *(Clinical basis for our 0.2–1.5 Hz Bilateral Auditory & Visual Stimulation panner and Serendipity distraction guard).*
+- **Oster, G. (1973).** *"Auditory Beats in the Brain."* *Scientific American*, 229(4), 94–102. *(Neuroacoustic foundation for low-frequency 6 Hz Theta binaural perceptual entrainment).*
+
+---
+
+## D. Clinical & Therapeutic Disclaimer
+
+**Practitioner / Guide** mode is a receptive music therapy and psychoacoustic co-regulation aid designed to support qualified mental health professionals, music therapists, and personal nervous-system self-regulation. It is **not** a medical device nor a substitute for medical diagnosis, psychotherapy, or psychiatric treatment.
+
+---
+
+## E. Free Forever Guarantee (GNU GPL v3.0 Summary)
 
 Copyright (C) 2026 **Voidwave Lab**.
 
 This program is free software: you can redistribute it and/or modify it under the terms of the **GNU General Public License** as published by the Free Software Foundation, either **version 3** of the License, or (at your option) any later version (`GPL-3.0-or-later`).
 
-See the [`LICENSE`](./LICENSE) file for the full license text.
+You have the irrevocable freedom to:
+1. **Run** the program for any purpose (personal, academic, or clinical).
+2. **Study** how the program works and adapt its mathematical and psychoacoustic models.
+3. **Share** copies freely with patients, students, colleagues, and communities.
+4. **Modify** and improve the program, under the strict copyleft condition that any derivative work or redistribution remains free and open-source under the same **GNU GPL v3.0** license.
+
+See the [`LICENSE`](./LICENSE) file for the full official license text.
