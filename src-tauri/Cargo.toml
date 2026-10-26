@@ -1,6 +1,6 @@
 [package]
 name = "aetherium"
-version = "0.1.0"
+version = "0.4.0"
 description = "Aetherium — Generative Soundscape & Receptive Therapy Desktop Application"
 authors = ["Voidwave Lab"]
 license = "GPL-3.0-or-later"

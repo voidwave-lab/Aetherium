@@ -70,6 +70,28 @@ jobs:
       - name: Install Frontend Dependencies
         run: npm install
 
+      - name: Sync Version with Release Tag
+        shell: bash
+        env:
+          RAW_TAG: "${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name }}"
+        run: |
+          export VERSION="${RAW_TAG#v}"
+          if [ -n "$VERSION" ]; then
+            node -e '
+              const fs = require("fs");
+              const ver = process.env.VERSION;
+              for (const file of ["package.json", "src-tauri/tauri.conf.json"]) {
+                const data = JSON.parse(fs.readFileSync(file, "utf8"));
+                if (data.version) data.version = ver;
+                if (data.package && data.package.version) data.package.version = ver;
+                fs.writeFileSync(file, JSON.stringify(data, null, 2) + "\n");
+              }
+              const cargo = fs.readFileSync("src-tauri/Cargo.toml", "utf8")
+                .replace(/^version\s*=\s*"[^"]*"/m, `version = "${ver}"`);
+              fs.writeFileSync("src-tauri/Cargo.toml", cargo);
+            '
+          fi
+
       - name: Build and Publish Desktop Installers via Tauri Action
         uses: tauri-apps/tauri-action@v0
         env:
