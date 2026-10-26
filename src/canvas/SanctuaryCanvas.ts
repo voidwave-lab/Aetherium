@@ -464,6 +464,14 @@ export class SanctuaryCanvas {
     this.animationFrameId = window.requestAnimationFrame(tick);
   }
 
+  public dispose(): void {
+    if (this.animationFrameId !== null) {
+      window.cancelAnimationFrame(this.animationFrameId);
+      this.animationFrameId = null;
+    }
+    window.removeEventListener('resize', this.handleResize);
+  }
+
   private updatePhysics(dt: number, now: number): void {
     const state = store.getState();
     const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
