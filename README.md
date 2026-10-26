@@ -1,8 +1,8 @@
 # AETHERIUM
 
-[![Release Aetherium Multi-Platform Binaries (Desktop & Android APK)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml/badge.svg)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml)
-
 **Unified Multi-Platform Generative Ambient Soundscape & Receptive Music Therapy Sanctuary (`voidwave-lab`)**
+
+[![Release Aetherium Multi-Platform Binaries (Desktop & Android APK)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml/badge.svg)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml)
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3%2B-emerald.svg)](./LICENSE)
 [![Transparency: Zero-Profit Pledge](https://img.shields.io/badge/Transparency-Zero--Profit%20Ledger-teal.svg)](./TRANSPARENCY.md)
