@@ -22,9 +22,10 @@ Aplicația este concepută pentru două categorii distincte de utilizatori:
    - [Fizica Orbitală Kepleriană și Detecția Declanșării la Meridian](#2-fizica-orbitală-kepleriană-și-detecția-declanșării-la-meridian)
    - [Motorul de Cuantizare Armonică și Morfing Modal](#3-motorul-de-cuantizare-armonică-și-morfing-modal)
    - [Graful DSP Web Audio Procedural Multi-Strat și Psihoacustic](#4-graful-dsp-web-audio-procedural-multi-strat-și-psihoacustic)
-   - [Procesarea DSP a Suitei Clinice și Interpolarea Vectorială a Principiului ISO](#5-procesarea-dsp-a-suitei-clinice-și-interpolarea-vectorială-a-principiului-iso)
-   - [Pipeline-ul Procedural de Randare Atmosferică 2D](#6-pipeline-ul-procedural-de-randare-atmosferică-2d)
-   - [Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor](#7-backend-ul-nativ-rust--tauri-v1-și-optimizarea-binarelor)
+   - [Motorul Serendipity: Scântei Melodice Stocastice și Fenomene Efemere](#5-motorul-serendipity-scântei-melodice-stocastice-și-fenomene-efemere)
+   - [Procesarea DSP a Suitei Clinice și Interpolarea Vectorială a Principiului ISO](#6-procesarea-dsp-a-suitei-clinice-și-interpolarea-vectorială-a-principiului-iso)
+   - [Pipeline-ul Procedural de Randare Atmosferică 2D](#7-pipeline-ul-procedural-de-randare-atmosferică-2d)
+   - [Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor](#8-backend-ul-nativ-rust--tauri-v1-și-optimizarea-binarelor)
 3. [Partea III: Pentru Dezvoltatori (Compilarea din Codul Sursă)](#partea-iii-pentru-dezvoltatori-compilarea-din-codul-sursă)
 
 ---
@@ -79,6 +80,7 @@ Conceput pentru o interacțiune tactilă pură, fără distrageri tehnice:
    - **Viscosity (*Crystalline ↔ Dense / Cristalin ↔ Dens*):** Încetinește viteza orbitală a sateliților, alungește urmele luminoase de pe ecran și transformă atacul notelor în creșteri lente și catifelate.
    - **Nostalgia (*Pristine ↔ Worn / Pur ↔ Patinat*):** Adaugă căldura benzii magnetice analogice, o ușoară fluctuație a înălțimii sunetului (*wow & flutter*), o textură discretă de ploaie/vinil și o granulație vizuală de film sepia.
    - **Rarity (*Present ↔ Silence / Prezență ↔ Liniște*):** Controlează probabilitatea ca o traversare a Meridianului să rămână în tăcere în loc să redea o notă, oferind muzicii spațiu de respirație.
+   - **Serendipity (*Stillness ↔ Sparks / Nemiscare ↔ Scântei*):** Previne obișnuința auditivă (*habituation*) prin apariția unor micro-evenimente muzicale și vizuale blânde la intervale neregulate (la fiecare 8–25 secunde)—precum un *Arpegiu Rubato* însoțit de o cometă luminoasă pe cerul exterior, o *Briză Modală* ce transpune temporar fundamentala pe subdominantă (`IV`) sau submediantă (`VI`) odată cu o undă de auroră dinspre Nucleu, ori un *Ecou Cristalin* în Octava 5. Setați la `0% (Stillness)` pentru predictibilitate pură sau creșteți spre `100% (Sparks)` pentru un sanctuar viu, în continuă evoluție.
    - **Fade to Silence (Temporizator de Somn):** Selectați `15m`, `30m` sau `60m` lângă pictograma semilunii pentru ca Aetherium să reducă treptat volumul până la liniște deplină.
 
 ---
@@ -97,11 +99,12 @@ Comutarea în modul **Practitioner / Guide** dezvăluie panoul lateral pliabil *
      1. Alegeți durata ședinței (`20m`, `45m`, `50m` ora terapeutică standard sau `60m`).
      2. Selectați **Faza 1 — Mirroring (Starea Inițială)** pentru a oglindi starea cu care sosește pacientul (*High Agitation / Tension*, *Melancholic / Heavy* sau *Dissociated / Flat*).
      3. Selectați **Faza 2 — Co-Regulation (Starea Țintă la 75% din durată)** (*Parasympathetic Rest / Safe Grounding* sau *Warm Openness*).
-     4. Apăsați **Start Session Arc**. Aetherium interpolează automat gama muzicală, ritmul orbital, ceața reverberantă și căldura armonică pe parcursul ședinței—iar în **ultimele 10% din timp (Faza 3 — Re-Orientation)** crește blând luminozitatea și claritatea, astfel încât pacientul să părăsească cabinetul ancorat și vigilent, nu excesiv sedat.
+     4. Apăsați **Start Session Arc**. Aetherium interpolează automat gama muzicală, ritmul orbital, ceața reverberantă și căldura armonică pe parcursul ședinței—menținând parametrul **Serendipity** la un nivel scăzut (`5%`) în timpul fazei parasimpatice profunde și crescându-l treptat (`35%`) împreună cu luminozitatea și claritatea în **ultimele 10% din timp (Faza 3 — Re-Orientation)**, pentru a trezi blând atenția pacientului la finalul terapiei.
 
 3. **Bilateral Grounding (Stimulare Bilaterală EMDR / Panoramare Somatică)**
    - *Cum Funcționează:* Activați **Bilateral Grounding** pentru a deplasa lin vocile armonice și un puls ritmic delicat între canalul audio **Stâng** și cel **Drept** (cu viteză reglabilă de la `0.2 Hz` pentru meditație lentă până la `1.5 Hz` pentru procesare activă, și lățime stereo de la `0%` la `100%`).
    - *Urmărire Vizuală + Auditivă:* O luminiscență calmă oscilează sincron pe marginile stângă și dreaptă ale ecranului (însoțită de un reper luminos orizontal), permițând pacientului să urmărească ritmul bilateral auditiv, vizual sau multimodal.
+   - *Garda de Siguranță Clinică (Blocare Automată Serendipity în EMDR):* Ori de câte ori modul Bilateral EMDR este activat, Aetherium blochează automat **Serendipity** la `0%` (anulând orice comete sau schimbări modale), astfel încât niciun stimul aleatoriu să nu distragă pacientul de la urmărirea bilaterală.
 
 4. **Ancoră Somatică Sub-Bas ($40\text{–}60\text{ Hz}$) și Antrenare Binaurală Theta ($6\text{ Hz}$)**
    - **Somatic Sub-Bass Anchor ($40\text{–}60\text{ Hz}$):** Amplifică o undă sinusoidală sub-fundamentală pură și caldă, creând o senzație fizică liniștitoare de împământare în încăpere sau în căști pentru pacienții anxioși sau disociați.
@@ -137,7 +140,8 @@ flowchart TD
 
     subgraph AUDIO["Motorul DSP Web Audio Procedural și Psihoacustic"]
         HE["HarmonicEngine.ts (Cuantizator Modal Tonal)"]
-        AE["AudioEngine.ts (Sintetizator Tone.js pe 3 Straturi & Magistrală Clinică)"]
+        SE["SerendipityEngine.ts (Scântei Melodice Stocastice)"]
+        AE["AudioEngine.ts (Sintetizator Tone.js Multi-Strat & Magistrală Clinică)"]
     end
 
     subgraph NATIVE["Nucleul Nativ Rust Tauri v1 (src-tauri)"]
@@ -146,10 +150,13 @@ flowchart TD
 
     UI -->|Declanșează Acțiuni| ST
     ST -->|Abonări la Stare| UI
-    ST -->|Parametri Macro & Orbite| SC
+    ST -->|Parametri Macro, Orbite & Evenimente Serendipity| SC
     SC -->|Traversare Meridian: onSatelliteTrigger| ST
+    SE -->|Arpegiu Rubato, Briză Modală & Ecou Cristalin| ST
+    SE -->|Declanșări Audio Stocastice| AE
     ST -->|Payload Declanșare & Macro| AE
     HE -->|Cuantizare Gamă & Registru| ST
+    HE -->|Extensii Armonice, Trepte IV/VI & Diade| SE
     HE -->|Voicing Dronă & Sub-Fundamentale| AE
     AE -->|LFO Respirație 0.05-0.15Hz & Fază EMDR| SC
     UI <-->|Tauri IPC invoke| RS
@@ -282,7 +289,33 @@ $$y(x) = \frac{\tanh(k \cdot x)}{\tanh(k)}, \quad k = 0.6 + 2.2N$$
 
 ---
 
-## 5. Procesarea DSP a Suitei Clinice și Interpolarea Vectorială a Principiului ISO
+## 5. Motorul Serendipity: Scântei Melodice Stocastice și Fenomene Efemere
+
+Implementat în [`src/audio/SerendipityEngine.ts`](./src/audio/SerendipityEngine.ts), [`src/audio/HarmonicEngine.ts`](./src/audio/HarmonicEngine.ts) și [`src/canvas/SanctuaryCanvas.ts`](./src/canvas/SanctuaryCanvas.ts), modulul **Serendipity** ($S \in [0.0, 1.0]$) previne obișnuința auditivă în timpul sesiunilor lungi, păstrând însă un caracter meditativ, non-intruziv.
+
+### 1. Planificatorul Stocastic Scalat Invers
+Când redarea este activă și $S_{\text{eff}} > 0.01$, `SerendipityEngine` calculează fereastra următoarei evaluări $[T_{\min}, T_{\max}]$ invers proporțional cu $S_{\text{eff}}$:
+
+$$T_{\min}(S_{\text{eff}}) = 8.0 + 11.0(1 - S_{\text{eff}})\text{ s}, \quad T_{\max}(S_{\text{eff}}) = 12.0 + 13.0(1 - S_{\text{eff}})\text{ s}$$
+
+La valori reduse ($S_{\text{eff}} \to 0.05$), evenimentele apar rar, la fiecare $18.5\text{–}24.4\text{ secunde}$; la nivelul maxim ($S_{\text{eff}} = 1.0$), evenimentele apar la fiecare $8.0\text{–}12.0\text{ secunde}$.
+
+### 2. Evenimente Muzicale Ponderate și Corespondente Vizuale Efemere
+La fiecare evaluare, o extragere aleatoare uniformă $u \sim \mathcal{U}(0, 1)$ selectează unul dintre cele trei fenomene:
+
+| Tip Eveniment | Pondere | Implementare Muzicală și Psihoacustică | Fenomen Vizual Efemer pe Pânză (`SanctuaryCanvas.ts`) |
+| :--- | :--- | :--- | :--- |
+| **Evenimentul A: Arpegiu Rubato** | **60%** ($u < 0.60$) | Selectează $N \in \{3, 4, 5\}$ note din gama activă, favorizând extensiile calde (**Fundamentală, Cvintă, Septimă, Nonă, Undecimă** în **Octavele 4–5**). Le redă secvențial cu o temporizare rubato neliniară, în ușoară decelerare ($\Delta t_i = 350 + 430(i/(N-1))^{1.45} + \epsilon\text{ ms} \in [350, 900]\text{ ms}$) și velocitate delicată ($0.18\text{–}0.30$). | Generează o **Cometă / Stea Căzătoare** (`SerendipityComet`) care alunecă pe arcul exterior al pânzei ($0.84\text{–}1.02\ R_{\max}$). Coada luminoasă și nucleul cometei pulsează sincron cu fiecare notă a arpegiului, eliberând particule stelare etichetate cu numele notei. |
+| **Evenimentul B: Briză Modală / Schimbare de Fundamentală** | **20%** ($0.60 \le u < 0.80$) | Transpune temporar Drona Centrală, sub-basul somatic și rădăcina de cuantizare pe **Subdominantă ($\text{IV}$)** sau **Submediantă ($\text{VI}$)** timp de $16\text{–}24\text{ secunde}$, revenind apoi lin la tonica de bază ($\text{I}$). | Generează o **Undă de Auroră** (`ModalAuroraRipple`) care se extinde radial dinspre Nucleul Central peste ceața de fundal, afișând indicatorul `MODAL BREEZE · IV / VI` sub Nucleu. |
+| **Evenimentul C: Ecou Cristalin în Octava 5** | **20%** ($u \ge 0.80$) | Declanșează o diadă armonică cristalină (interval de **Cvintă** sau **Terță** în **Octava 5**) pe sintetizatorul dedicat `ghostShimmerSynth`, rutată **100% umed (wet)** prin magistrala de reverberație cu coadă lungă (`ghostShimmerReverb`, `decay: 9.5s`, `wet: 1.0`). | Deschide un **Halou Cristalin** (`GhostEchoHalo`) în bolta superioară a pânzei, care se dilată lent și se dizolvă în ceață. |
+
+### 3. Gărzi de Siguranță Clinică în Modul Practician
+- **Blocarea Automată în timpul EMDR Bilateral:** Ori de câte ori stimularea bilaterală (`emdrBilateralEnabled`) este activă în modul **Practitioner / Guide**, `store.getEffectiveSerendipity()` fixează $S_{\text{eff}} = 0.0$, oprește orice arpegiu în curs și readuce imediat fundamentala la tonica $\text{I}$, prevenind orice distragere a atenției vizuale sau auditive.
+- **Dozarea în Arcul Terapeutic ISO:** În timpul ședințelor automate bazate pe Principiul ISO (`evaluateIsoSessionArc`), parametrul `serendipity` este menținut la `0.05` (`5%`) pe toată durata **Fazei 2 de Co-Reglare parasimpatică** ($0.22 \le p < 0.90$) și este crescut cosinusoidal până la `0.35` (`35%`) în ultimele 10% (**Faza 3 de Re-Orientare**, $0.90 \le p \le 1.00$), stimulând blând re-ancorarea pacientului la finalul ședinței.
+
+---
+
+## 6. Procesarea DSP a Suitei Clinice și Interpolarea Vectorială a Principiului ISO
 
 ### 1. Sculptarea Acustică a Spectrului Vocal (Dialogue Mode)
 Inserează un filtru parametric `Tone.Filter` (`type: 'peaking'`, `frequency: 1100 Hz`, `Q: 0.7`, `gain` reglabil între `0 dB` și `-12 dB`) pe magistrala master. Deoarece factorul de calitate $Q = 0.7$ acoperă aproximativ două octave în jurul valorii de $1.1\text{ kHz}$, filtrul eliberează spectrul fundamental și formantic al vorbirii umane ($400\text{ Hz} – 2.5\text{ kHz}$), păstrând intacte frecvențele sub-bas ($40\text{–}150\text{ Hz}$) și armonicele înalte ($>3.5\text{ kHz}$).
@@ -309,16 +342,17 @@ Simultan, `SanctuaryCanvas.renderBilateralVisualGrounding` interoghează `audioE
 
 ---
 
-## 6. Pipeline-ul Procedural de Randare Atmosferică 2D
+## 7. Pipeline-ul Procedural de Randare Atmosferică 2D
 
 Pentru a menține executabilul nativ compact și eficient pe plăci grafice integrate, `SanctuaryCanvas.ts` implementează efecte atmosferice procedurale în HTML5 2D Canvas accelerat hardware:
 - **Morfingul Paletei Cromatice prin Luminance:** Nuanțele HSL primare și de accent sunt interpolate continuu de la indigo-ardezie profund ($234^\circ$), trecând prin cyan ($193^\circ$), până la chihlimbar solar cald ($42^\circ$).
 - **Buffere Inelare pentru Urmele de Vâscozitate:** Fiecare satelit menține un istoric de coordonate a cărui lungime variază dinamic cu `viscosity` ($14$ până la $86$ de puncte), randat cu atenuare alfa pătratică și blur Gaussian (`ctx.filter = blur(...)`) controlat de `fog`.
+- **Fenomene Efemere Serendipity:** Randează comete multi-segment sincronizate la milisecundă cu notele arpegiilor rubato, unde radiale de auroră în timpul transpunerilor modale `IV`/`VI` și halouri cristaline în registrul supra-acut.
 - **Granulație Procedurală de Film și Fluctuație de Bandă (Nostalgia):** O textură RGBA offscreen de $180 \times 180$ pixeli este pre-generată la pornire și proiectată peste scenă cu deplasări sub-cadru și o vignetă radială sepia, în timp ce pozițiile sateliților primesc o micro-oscilație deterministă proporțională cu `nostalgia`.
 
 ---
 
-## 7. Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor
+## 8. Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor
 
 Implementat în [`src-tauri/src/main.rs`](./src-tauri/src/main.rs) și [`src-tauri/Cargo.toml`](./src-tauri/Cargo.toml):
 - **Persistență Validată prin Schemă:** Comenzile native Tauri `save_constellation_json` și `load_constellation_json` validează fiecare fișier de preset în raport cu structura `ConstellationFilePayload` prin `serde` și `serde_json` înainte de scrierea sau citirea din directorul AppData al sistemului de operare (`$APPDATA/constellations/*.aether.json`).
@@ -379,14 +413,15 @@ Aetherium/
     ├── main.ts                     # Punctul de intrare al aplicației
     ├── state/store.ts              # Store reactiv & motorul de interpolare vectorială a Principiului ISO
     ├── audio/
-    │   ├── HarmonicEngine.ts       # Cuantizare modală Luminance & maparea registrelor orbitale
-    │   └── AudioEngine.ts          # Sintetizator Tone.js pe 3 straturi + magistrala DSP clinică
+    │   ├── HarmonicEngine.ts       # Cuantizare modală Luminance, transpuneri IV/VI & registre orbitale
+    │   ├── SerendipityEngine.ts    # Arpegii rubato stocastice, brize modale & ecouri cristaline
+    │   └── AudioEngine.ts          # Sintetizator Tone.js multi-strat + magistrala DSP clinică
     ├── canvas/
-    │   └── SanctuaryCanvas.ts      # Fizică orbitală kepleriană la 60fps, Meridian & luminiscență EMDR
+    │   └── SanctuaryCanvas.ts      # Fizică kepleriană la 60fps, Meridian, comete, aurore & EMDR
     └── components/
         ├── OnboardingModal.ts      # Fereastra modală de selecție a spațiului la lansare
         ├── TopBar.ts               # Comutator de mod, telemetrie & export/import JSON
-        ├── PoeticDock.ts           # Selector Seeds, cele 4 glisoare Macro, Rarity & Temporizator Somn
+        ├── PoeticDock.ts           # 8 Seeds, 6 glisoare Macro (inclusiv Serendipity) & Temporizator Somn
         └── PractitionerDock.ts     # Suita clinică laterală pliabilă (Dialogue EQ, Arc ISO, EMDR)
 ```
 

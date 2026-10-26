@@ -46,6 +46,12 @@ const MACRO_CONTROLS: MacroControlMeta[] = [
     leftPole: 'Present',
     rightPole: 'Silence',
   },
+  {
+    key: 'serendipity',
+    label: 'Serendipity',
+    leftPole: 'Stillness',
+    rightPole: 'Sparks',
+  },
 ];
 
 const SEED_ORDER: SeedId[] = [
@@ -178,8 +184,8 @@ export class PoeticDock {
           </div>
         </div>
 
-        <!-- Bottom Row: 4 Macro Poetic Sliders + Rarity (Silence Probability) -->
-        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4 pt-0.5">
+        <!-- Bottom Row: 4 Macro Poetic Sliders + Rarity + Serendipity (Stillness <-> Sparks) -->
+        <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-0.5">
           ${slidersHtml}
         </div>
       </div>
@@ -238,17 +244,32 @@ export class PoeticDock {
       }
     });
 
+    const emdrClamped =
+      state.mode === 'practitioner' && state.practitioner.emdrBilateralEnabled;
+
     for (const ctrl of MACRO_CONTROLS) {
-      const val = state.macros[ctrl.key];
+      const val =
+        ctrl.key === 'serendipity' && emdrClamped ? 0 : state.macros[ctrl.key];
       const slider = this.root.querySelector<HTMLInputElement>(
         `[data-macro-slider="${ctrl.key}"]`
       );
-      if (slider && document.activeElement !== slider) {
-        slider.value = String(val);
+      if (slider) {
+        if (document.activeElement !== slider) {
+          slider.value = String(val);
+        }
+        if (ctrl.key === 'serendipity') {
+          slider.disabled = emdrClamped;
+          slider.title = emdrClamped
+            ? 'Clinical Safety Guard: Serendipity is clamped to 0% while Bilateral EMDR is active'
+            : 'Serendipity (Stillness to Sparks)';
+        }
       }
       const labelEl = this.root.querySelector(`#macro-val-${ctrl.key}`);
       if (labelEl) {
-        labelEl.textContent = `${Math.round(val * 100)}%`;
+        labelEl.textContent =
+          ctrl.key === 'serendipity' && emdrClamped
+            ? '0% (EMDR)'
+            : `${Math.round(val * 100)}%`;
       }
     }
 

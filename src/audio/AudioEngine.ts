@@ -1,5 +1,6 @@
 import * as Tone from 'tone';
 import { HarmonicEngine, HarmonicZoneId } from './HarmonicEngine';
+import { SerendipityEngine } from './SerendipityEngine';
 import {
   AetheriumState,
   SatelliteTriggerPayload,
@@ -93,6 +94,7 @@ export class AudioEngine {
   private userExplicitlyMuted = false;
   private activeSeedId: SeedId | null = null;
   private activeHarmonicZoneId: HarmonicZoneId | null = null;
+  private activeModalRootOverride: string | null = null;
   private activeDroneNotes: string[] = [];
   private activeSubNote: string | null = null;
 
@@ -177,10 +179,30 @@ export class AudioEngine {
   private textureSweepLfo: Tone.LFO | null = null;
   private textureOutputGain: Tone.Gain | null = null;
 
+  // Extension: Serendipity Engine (Rubato Arpeggio, Modal Breeze & 100% Wet Ghost-Echo Shimmer)
+  private serendipityEngine: SerendipityEngine;
+  private ghostShimmerReverb: Tone.Reverb | null = null;
+  private ghostShimmerSynth: Tone.PolySynth<Tone.AMSynth> | null = null;
+
   private sessionTickInterval: number | null = null;
   private crackleTickInterval: number | null = null;
 
   constructor() {
+    this.serendipityEngine = new SerendipityEngine({
+      onRubatoArpeggioNote: (note, durationSec, velocity, pan) => {
+        this.triggerSerendipityArpeggioNote(note, durationSec, velocity, pan);
+      },
+      onModalBreezeShift: () => {
+        const st = store.getState();
+        if (st.isPlaying) {
+          this.updateDroneHarmony(st.activeSeedId, st.macros.luminance, true);
+        }
+      },
+      onGhostEchoShimmer: (notes, durationSec, velocity) => {
+        this.triggerGhostEchoShimmer(notes, durationSec, velocity);
+      },
+    });
+
     store.subscribe((state) => {
       this.syncWithState(state);
     });
@@ -816,6 +838,43 @@ export class AudioEngine {
 
     this.pinkNoise = new Tone.Noise('pink').connect(this.pinkNoiseGain);
     this.brownNoise = new Tone.Noise('brown').connect(this.brownNoiseGain);
+
+    // =========================================================================
+    // SERENDIPITY EVENT C: 100% WET REVERB SHIMMER BUS ("GHOST ECHO")
+    // =========================================================================
+    this.ghostShimmerReverb = new Tone.Reverb({
+      decay: 9.5,
+      preDelay: 0.09,
+      wet: 1.0, // Strictly 100% wet reverb bus
+    }).connect(this.fogMasterLowpass);
+    void this.ghostShimmerReverb.ready.catch(() => {
+      // Fallback cleanly if OfflineAudioContext is restricted
+    });
+
+    this.ghostShimmerSynth = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 2.0,
+      oscillator: {
+        type: 'fatsine',
+        count: 3,
+        spread: 22,
+      },
+      modulation: {
+        type: 'sine',
+      },
+      envelope: {
+        attack: 1.8,
+        decay: 3.5,
+        sustain: 0.45,
+        release: 7.5,
+      },
+      modulationEnvelope: {
+        attack: 1.5,
+        decay: 2.8,
+        sustain: 0.5,
+        release: 6.0,
+      },
+      volume: -9,
+    }).connect(this.ghostShimmerReverb);
   }
 
   /**
@@ -1077,17 +1136,20 @@ export class AudioEngine {
   private updateDroneHarmony(seedId: SeedId, luminance: number, force = false): void {
     if (!this.dronePadSynth || !this.droneSubSynth) return;
 
-    const zone = HarmonicEngine.resolveHarmonicZone(seedId, luminance);
+    const modalRootOverride = store.getState().modalRootOverride;
+    const zone = HarmonicEngine.resolveHarmonicZone(seedId, luminance, modalRootOverride);
     const seedChanged = this.activeSeedId !== seedId;
     const zoneChanged = this.activeHarmonicZoneId !== zone.id;
+    const modalRootChanged = this.activeModalRootOverride !== modalRootOverride;
 
-    if (!force && !seedChanged && !zoneChanged) {
+    if (!force && !seedChanged && !zoneChanged && !modalRootChanged) {
       return;
     }
 
     const hadPreviousSeed = this.activeSeedId !== null;
     this.activeSeedId = seedId;
     this.activeHarmonicZoneId = zone.id;
+    this.activeModalRootOverride = modalRootOverride;
 
     const now = Tone.now();
     if (this.activeDroneNotes.length > 0) {
@@ -1105,7 +1167,10 @@ export class AudioEngine {
     }
 
     if (this.somaticSubOsc) {
-      this.somaticSubOsc.frequency.rampTo(resolveSomaticSubBassHz(seedId), RAMP_TIME_SEC);
+      const subHz = modalRootOverride
+        ? safeFinite(Tone.Frequency(`${modalRootOverride}1`).toFrequency(), resolveSomaticSubBassHz(seedId))
+        : resolveSomaticSubBassHz(seedId);
+      this.somaticSubOsc.frequency.rampTo(subHz, 1.8);
     }
     if (this.emdrPulseOsc) {
       const pulseNote = `${zone.rootNote}3`;
@@ -1461,7 +1526,65 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Triggers a single note of a Serendipity "Rubato Arpeggio" (Event A)
+   * with low, non-startling velocity on a delicate felt-piano / harp blend.
+   */
+  public triggerSerendipityArpeggioNote(
+    note: string,
+    durationSec: number,
+    velocity: number,
+    _pan: number
+  ): void {
+    const state = store.getState();
+    if (!this.isInitialized || !state.isPlaying) return;
+
+    const now = Tone.now();
+    const safeVel = Math.max(0.12, Math.min(0.38, safeFinite(velocity, 0.24)));
+
+    if (state.activeSeedId === 'midnight-vinyl' && this.rhodesSynth) {
+      this.rhodesSynth.triggerAttackRelease(note, durationSec, now, safeVel * 0.85);
+      return;
+    }
+
+    if (state.activeSeedId === 'singing-bowls' && this.bowlModalSynths[0]) {
+      const freq = safeFinite(Tone.Frequency(note).toFrequency(), 440);
+      this.bowlModalSynths[0].triggerAttackRelease(freq, durationSec * 2.2, now, safeVel * 0.75);
+      return;
+    }
+
+    if (this.feltPianoSynth) {
+      this.feltPianoSynth.triggerAttackRelease(note, durationSec, now, safeVel);
+    }
+    if (this.glassyPadSynth) {
+      this.glassyPadSynth.triggerAttackRelease(
+        note,
+        durationSec * 1.35,
+        now + 0.03,
+        safeVel * 0.55
+      );
+    }
+  }
+
+  /**
+   * Triggers a Serendipity "High-Octave Shimmer / Ghost Echo" (Event C):
+   * a crystalline Octave-5 harmonic dyad (5th or 3rd) routed 100% through the wet Reverb bus.
+   */
+  public triggerGhostEchoShimmer(
+    notes: [string, string],
+    durationSec: number,
+    velocity: number
+  ): void {
+    const state = store.getState();
+    if (!this.isInitialized || !state.isPlaying || !this.ghostShimmerSynth) return;
+
+    const now = Tone.now();
+    const safeVel = Math.max(0.14, Math.min(0.4, safeFinite(velocity, 0.26)));
+    this.ghostShimmerSynth.triggerAttackRelease(notes, durationSec, now, safeVel);
+  }
+
   public dispose(): void {
+    this.serendipityEngine.dispose();
     if (this.sessionTickInterval !== null) {
       window.clearInterval(this.sessionTickInterval);
     }
@@ -1492,6 +1615,8 @@ export class AudioEngine {
     }
     this.pinkNoise?.dispose();
     this.brownNoise?.dispose();
+    this.ghostShimmerSynth?.dispose();
+    this.ghostShimmerReverb?.dispose();
     this.masterReverb?.dispose();
     this.longTailDiffuser?.dispose();
     this.pingPongDelay?.dispose();

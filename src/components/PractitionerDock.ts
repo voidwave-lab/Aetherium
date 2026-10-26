@@ -265,6 +265,14 @@ export class PractitionerDock {
                 class="poetic-slider"
               />
 
+              <!-- ISO Serendipity Pacing Telemetry (5% Parasympathetic -> 35% Re-Orientation) -->
+              <div class="flex items-center justify-between text-[10px] font-mono px-2 py-1 rounded bg-slate-950/60 border border-slate-800/70">
+                <span class="text-slate-400">Serendipity Pacing:</span>
+                <span id="val-iso-serendipity-pacing" class="text-cyan-300">
+                  5% (Parasympathetic Stillness)
+                </span>
+              </div>
+
               <!-- Transport Controls for ISO Arc -->
               <div class="flex items-center gap-2 pt-0.5">
                 <button
@@ -345,6 +353,15 @@ export class PractitionerDock {
                 <span>0% (Center)</span>
                 <span>100% (Full Binaural Sweep)</span>
               </div>
+            </div>
+
+            <!-- Clinical Safety Guard Status for Serendipity during Bilateral EMDR -->
+            <div
+              id="emdr-serendipity-guard-badge"
+              class="flex items-center justify-between text-[10px] font-mono px-2 py-1 rounded bg-slate-950/60 border border-slate-800/70 text-slate-400"
+            >
+              <span>Serendipity Guard:</span>
+              <span id="val-emdr-serendipity-guard">Standby (Unlocked)</span>
             </div>
           </section>
 
@@ -791,6 +808,17 @@ export class PractitionerDock {
       const currY = 35 - evalCurr.vector.luminance * 28;
       playhead.setAttribute('cx', currX.toFixed(1));
       playhead.setAttribute('cy', currY.toFixed(1));
+
+      const isoSerenLabel = this.root.querySelector('#val-iso-serendipity-pacing');
+      if (isoSerenLabel) {
+        const serenPct = Math.round(evalCurr.vector.serendipity * 100);
+        isoSerenLabel.textContent =
+          evalCurr.phase === 're-orientation'
+            ? `${serenPct}% (Re-Orientation Awakening)`
+            : evalCurr.phase === 'co-regulation'
+              ? `${serenPct}% (Parasympathetic Stillness)`
+              : `${serenPct}% (Phase 1 Mirroring)`;
+      }
     }
 
     const startPauseBtn = this.root.querySelector('#btn-iso-start-pause');
@@ -839,6 +867,17 @@ export class PractitionerDock {
     const emdrWidthSlider = this.root.querySelector<HTMLInputElement>('#slider-emdr-width');
     if (emdrWidthSlider && document.activeElement !== emdrWidthSlider) {
       emdrWidthSlider.value = String(p.emdrStereoWidth);
+    }
+
+    const emdrGuardLabel = this.root.querySelector('#val-emdr-serendipity-guard');
+    if (emdrGuardLabel) {
+      if (p.emdrBilateralEnabled) {
+        emdrGuardLabel.textContent = 'Clamped to 0% (EMDR Active)';
+        emdrGuardLabel.className = 'text-amber-300';
+      } else {
+        emdrGuardLabel.textContent = `Unlocked (${Math.round(state.macros.serendipity * 100)}%)`;
+        emdrGuardLabel.className = 'text-slate-400';
+      }
     }
 
     // 4. Sync Somatic Sub-Bass & Binaural Theta

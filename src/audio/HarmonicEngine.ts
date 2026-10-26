@@ -89,18 +89,24 @@ export class HarmonicEngine {
   /**
    * Resolves the active harmonic scale, modal color extensions, and drone chord voicing
    * based on the active Seed and the continuous Luminance macro parameter (0.0 to 1.0).
+   * Supports an optional temporary modal root override (e.g. Subdominant IV or Submediant VI
+   * triggered by the Serendipity "Modal Breeze" engine).
    *
    * - 0.00 - 0.25 (Deep Shadow / Melancholic): Aeolian / Phrygian in D or C
    * - 0.25 - 0.50 (Intimate / Wistful): Dorian Mode with min7 and add9 intervals
    * - 0.50 - 0.75 (Floating / Contemplative): Major Pentatonic / Maj9 voicings
    * - 0.75 - 1.00 (Cosmic / Space-Ambient): Lydian Mode (raised #4th)
    */
-  public static resolveHarmonicZone(seedId: SeedId, luminance: number): HarmonicZoneInfo {
+  public static resolveHarmonicZone(
+    seedId: SeedId,
+    luminance: number,
+    rootOverride?: string | null
+  ): HarmonicZoneInfo {
     const clampedLum = Math.max(0, Math.min(1, luminance));
     const seedRoots = SEED_ROOT_MAP[seedId] ?? SEED_ROOT_MAP['rain-on-felt'];
 
     if (clampedLum < 0.25) {
-      const root = seedRoots.darkRoot;
+      const root = rootOverride || seedRoots.darkRoot;
       const isPhrygian = seedId === 'subterranean' && clampedLum < 0.12;
       const scaleType = isPhrygian ? 'phrygian' : 'aeolian';
       const scaleData = Scale.get(`${root} ${scaleType}`);
@@ -124,7 +130,7 @@ export class HarmonicEngine {
     }
 
     if (clampedLum < 0.50) {
-      const root = seedRoots.darkRoot;
+      const root = rootOverride || seedRoots.darkRoot;
       const scaleData = Scale.get(`${root} dorian`);
       const baseNotes =
         scaleData.notes.length > 0
@@ -160,7 +166,7 @@ export class HarmonicEngine {
     }
 
     if (clampedLum < 0.75) {
-      const root = seedRoots.brightRoot;
+      const root = rootOverride || seedRoots.brightRoot;
       const majorScale = Scale.get(`${root} major`).notes;
       const fallback = ['D', 'E', 'F#', 'G', 'A', 'B', 'C#'];
       const deg = majorScale.length >= 7 ? majorScale : fallback;
@@ -181,7 +187,7 @@ export class HarmonicEngine {
     }
 
     // 0.75 - 1.00: Cosmic / Space-Ambient — Lydian Mode (raised #4th)
-    const root = seedRoots.brightRoot;
+    const root = rootOverride || seedRoots.brightRoot;
     const lydianData = Scale.get(`${root} lydian`);
     const notes =
       lydianData.notes.length >= 7
@@ -242,9 +248,10 @@ export class HarmonicEngine {
     semiMajorAxis: number,
     scaleDegree: number,
     seedId: SeedId,
-    luminance: number
+    luminance: number,
+    rootOverride?: string | null
   ): QuantizedSatellitePitch {
-    const harmonicZone = this.resolveHarmonicZone(seedId, luminance);
+    const harmonicZone = this.resolveHarmonicZone(seedId, luminance, rootOverride);
     const { octave, registerLabel } = this.mapRadiusToOctave(semiMajorAxis);
     const pitchClasses = harmonicZone.pitchClasses;
     const safeDegree = Math.abs(Math.floor(scaleDegree)) % pitchClasses.length;
@@ -260,6 +267,135 @@ export class HarmonicEngine {
       octave,
       registerLabel,
       harmonicZone,
+    };
+  }
+
+  /**
+   * Generates a 3-to-5 note "Rubato Arpeggio" from the active harmonic zone,
+   * favoring warm extended intervals (Root, 5th, 7th, 9th, and 11th) in Octaves 4-5.
+   */
+  public static buildRubatoArpeggioNotes(
+    seedId: SeedId,
+    luminance: number,
+    noteCount: number,
+    rootOverride?: string | null
+  ): string[] {
+    const zone = this.resolveHarmonicZone(seedId, luminance, rootOverride);
+    const baseScaleName =
+      zone.id === 'shadow-aeolian'
+        ? `${zone.rootNote} ${zone.modeName}`
+        : zone.id === 'wistful-dorian'
+          ? `${zone.rootNote} dorian`
+          : zone.id === 'floating-maj9'
+            ? `${zone.rootNote} major`
+            : `${zone.rootNote} lydian`;
+
+    const diatonic = Scale.get(baseScaleName).notes;
+    const fallback = zone.pitchClasses;
+    const deg = diatonic.length >= 7 ? diatonic : fallback;
+
+    const root = Note.simplify(deg[0] ?? zone.rootNote) || zone.rootNote;
+    const ninth = Note.simplify(deg[1] ?? deg[0] ?? 'E') || 'E';
+    const eleventh = Note.simplify(deg[3] ?? deg[2] ?? 'G') || 'G';
+    const fifth = Note.simplify(deg[4] ?? deg[1] ?? 'A') || 'A';
+    const seventh = Note.simplify(deg[6] ?? deg[5] ?? 'C') || 'C';
+
+    // Warm extended voicing pool in Octaves 4 and 5: Root4, Fifth4, Seventh4, Ninth5, Eleventh5, Fifth5
+    const warmVoicingPool = [
+      `${root}4`,
+      `${fifth}4`,
+      `${seventh}4`,
+      `${ninth}5`,
+      `${eleventh}5`,
+      `${root}5`,
+      `${fifth}5`,
+    ];
+
+    const clampedCount = Math.max(3, Math.min(5, Math.round(noteCount)));
+    // Choose a gentle ascending, arch, or cascading contour
+    const contourRoll = Math.random();
+    const startIdx = Math.random() < 0.65 ? 0 : 1;
+    const selected = warmVoicingPool.slice(startIdx, startIdx + clampedCount);
+
+    if (contourRoll < 0.55) {
+      // Ascending warm harp/felt arpeggio
+      return selected;
+    } else if (contourRoll < 0.82 && selected.length >= 4) {
+      // Gentle arch contour (e.g. Root4 -> Fifth4 -> Ninth5 -> Seventh4)
+      const copy = [...selected];
+      const last = copy.pop()!;
+      const secondLast = copy.pop()!;
+      copy.push(last, secondLast);
+      return copy;
+    } else {
+      // Descending starlight cascade
+      return [...selected].reverse();
+    }
+  }
+
+  /**
+   * Resolves the Subdominant (IV) or Submediant (VI) modal root pitch class
+   * for the Serendipity "Modal Breeze / Root Shift" event.
+   */
+  public static resolveModalBreezeRoot(
+    seedId: SeedId,
+    luminance: number
+  ): { degree: 'IV' | 'VI'; shiftedRoot: string; homeRoot: string } {
+    const homeZone = this.resolveHarmonicZone(seedId, luminance, null);
+    const scaleQuery =
+      homeZone.id === 'shadow-aeolian'
+        ? `${homeZone.rootNote} ${homeZone.modeName}`
+        : homeZone.id === 'wistful-dorian'
+          ? `${homeZone.rootNote} dorian`
+          : homeZone.id === 'floating-maj9'
+            ? `${homeZone.rootNote} major`
+            : `${homeZone.rootNote} lydian`;
+
+    const diatonic = Scale.get(scaleQuery).notes;
+    const degree: 'IV' | 'VI' = Math.random() < 0.55 ? 'IV' : 'VI';
+    const rawTarget =
+      degree === 'IV'
+        ? diatonic[3] ?? homeZone.pitchClasses[3] ?? 'G'
+        : diatonic[5] ?? homeZone.pitchClasses[4] ?? 'A';
+
+    const shiftedRoot = Note.simplify(rawTarget) || rawTarget;
+    return {
+      degree,
+      shiftedRoot,
+      homeRoot: homeZone.rootNote,
+    };
+  }
+
+  /**
+   * Resolves a crystalline Octave-5 harmonic dyad (5th or 3rd interval)
+   * for the Serendipity "High-Octave Shimmer / Ghost Echo" event.
+   */
+  public static resolveGhostEchoDyad(
+    seedId: SeedId,
+    luminance: number,
+    rootOverride?: string | null
+  ): { notes: [string, string]; intervalLabel: '5th' | '3rd' } {
+    const zone = this.resolveHarmonicZone(seedId, luminance, rootOverride);
+    const scaleQuery =
+      zone.id === 'shadow-aeolian'
+        ? `${zone.rootNote} ${zone.modeName}`
+        : zone.id === 'wistful-dorian'
+          ? `${zone.rootNote} dorian`
+          : zone.id === 'floating-maj9'
+            ? `${zone.rootNote} major`
+            : `${zone.rootNote} lydian`;
+
+    const diatonic = Scale.get(scaleQuery).notes;
+    const rootPitch = Note.simplify(diatonic[0] ?? zone.rootNote) || zone.rootNote;
+    const useFifth = Math.random() < 0.6;
+    const partnerRaw = useFifth
+      ? diatonic[4] ?? zone.pitchClasses[1] ?? 'A'
+      : diatonic[2] ?? zone.pitchClasses[2] ?? 'F';
+    const partnerPitch = Note.simplify(partnerRaw) || partnerRaw;
+
+    return {
+      notes: [`${rootPitch}5`, `${partnerPitch}5`],
+      intervalLabel: useFifth ? '5th' : '3rd',
     };
   }
 }

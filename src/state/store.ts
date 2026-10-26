@@ -29,6 +29,22 @@ export type IsoTargetStateId = 'parasympathetic-rest' | 'warm-openness';
 
 export type IsoSessionPhase = 'mirroring' | 'co-regulation' | 're-orientation';
 
+export type SerendipityEventKind = 'rubato-arpeggio' | 'modal-breeze' | 'ghost-echo';
+
+export interface SerendipityEventPayload {
+  id: string;
+  kind: SerendipityEventKind;
+  label: string;
+  /** Notes triggered by this event (3-5 notes for Rubato Arpeggio, shifted root for Modal Breeze, Octave-5 dyad for Ghost Echo) */
+  notes: string[];
+  /** Relative step offsets in ms for Rubato Arpeggio notes so the canvas comet pulses in sync */
+  stepOffsetsMs?: number[];
+  /** Modal degree ('IV' or 'VI') and duration (ms) when kind === 'modal-breeze' */
+  modalDegree?: 'IV' | 'VI';
+  durationMs: number;
+  timestamp: number;
+}
+
 export interface MacroParams {
   /** 0.0 (Shadow: Aeolian/Phrygian) -> 1.0 (Light: Cosmic Lydian & bright filter cutoff) */
   luminance: number;
@@ -40,6 +56,8 @@ export interface MacroParams {
   nostalgia: number;
   /** 0.0 (Continuous) -> 1.0 (Sparse: entropy gate probability that a meridian crossing rests in silence) */
   rarity: number;
+  /** 0.0 (Stillness) -> 1.0 (Sparks: stochastic rubato arpeggios, modal root breezes & ghost-echo shimmers) */
+  serendipity: number;
 }
 
 export interface IsoVectorTarget extends MacroParams {
@@ -60,6 +78,7 @@ export const ISO_START_STATES: Record<
       viscosity: 0.22,
       nostalgia: 0.30,
       rarity: 0.14,
+      serendipity: 0.18,
       orbitalSpeedMultiplier: 1.42,
     },
   },
@@ -73,6 +92,7 @@ export const ISO_START_STATES: Record<
       viscosity: 0.74,
       nostalgia: 0.62,
       rarity: 0.38,
+      serendipity: 0.08,
       orbitalSpeedMultiplier: 0.72,
     },
   },
@@ -86,6 +106,7 @@ export const ISO_START_STATES: Record<
       viscosity: 0.68,
       nostalgia: 0.48,
       rarity: 0.54,
+      serendipity: 0.06,
       orbitalSpeedMultiplier: 0.64,
     },
   },
@@ -105,6 +126,7 @@ export const ISO_TARGET_STATES: Record<
       viscosity: 0.82,
       nostalgia: 0.34,
       rarity: 0.42,
+      serendipity: 0.05,
       orbitalSpeedMultiplier: 0.58,
     },
   },
@@ -118,18 +140,20 @@ export const ISO_TARGET_STATES: Record<
       viscosity: 0.56,
       nostalgia: 0.24,
       rarity: 0.24,
+      serendipity: 0.05,
       orbitalSpeedMultiplier: 0.82,
     },
   },
 };
 
-/** Final 10% Re-Orientation vector so the patient leaves alert and grounded */
+/** Final 10% Re-Orientation vector so the patient leaves alert and grounded (serendipity ramps to 0.35) */
 export const ISO_REORIENTATION_VECTOR: IsoVectorTarget = {
   luminance: 0.84,
   fog: 0.22,
   viscosity: 0.36,
   nostalgia: 0.18,
   rarity: 0.18,
+  serendipity: 0.35,
   orbitalSpeedMultiplier: 0.96,
 };
 
@@ -241,6 +265,10 @@ export interface AetheriumState {
   practitioner: PractitionerConfig;
   savedPresets: SavedPresetRecord[];
   lastTriggerEvent: SatelliteTriggerPayload | null;
+  lastSerendipityEvent: SerendipityEventPayload | null;
+  /** Temporary modal root shift ('IV' or 'VI') triggered by Serendipity Modal Breeze */
+  modalRootOverride: string | null;
+  modalRootDegree: 'IV' | 'VI' | null;
   statusToast: string | null;
 }
 
@@ -262,6 +290,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.42,
       nostalgia: 0.58,
       rarity: 0.22,
+      serendipity: 0.28,
     },
     initialOrbits: [
       { semiMajorAxis: 0.22, eccentricity: 0.09, angle: -2.1, argumentOfPeriapsis: 0.4, scaleDegree: 0 },
@@ -286,6 +315,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.78,
       nostalgia: 0.28,
       rarity: 0.30,
+      serendipity: 0.32,
     },
     initialOrbits: [
       { semiMajorAxis: 0.26, eccentricity: 0.12, angle: -1.8, argumentOfPeriapsis: 0.9, scaleDegree: 2 },
@@ -309,6 +339,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.66,
       nostalgia: 0.52,
       rarity: 0.46,
+      serendipity: 0.16,
     },
     initialOrbits: [
       { semiMajorAxis: 0.34, eccentricity: 0.17, angle: -2.4, argumentOfPeriapsis: 1.1, scaleDegree: 2 },
@@ -332,6 +363,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.34,
       nostalgia: 0.24,
       rarity: 0.15,
+      serendipity: 0.36,
     },
     initialOrbits: [
       { semiMajorAxis: 0.21, eccentricity: 0.07, angle: -1.9, argumentOfPeriapsis: 0.2, scaleDegree: 4 },
@@ -357,6 +389,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.54,
       nostalgia: 0.84,
       rarity: 0.28,
+      serendipity: 0.24,
     },
     initialOrbits: [
       { semiMajorAxis: 0.32, eccentricity: 0.12, angle: -2.0, argumentOfPeriapsis: 0.6, scaleDegree: 0 },
@@ -381,6 +414,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.72,
       nostalgia: 0.18,
       rarity: 0.34,
+      serendipity: 0.20,
     },
     initialOrbits: [
       { semiMajorAxis: 0.25, eccentricity: 0.08, angle: -1.7, argumentOfPeriapsis: 0.5, scaleDegree: 0 },
@@ -405,6 +439,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.80,
       nostalgia: 0.32,
       rarity: 0.26,
+      serendipity: 0.26,
     },
     initialOrbits: [
       { semiMajorAxis: 0.28, eccentricity: 0.11, angle: -1.9, argumentOfPeriapsis: 0.8, scaleDegree: 0 },
@@ -430,6 +465,7 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       viscosity: 0.68,
       nostalgia: 0.46,
       rarity: 0.22,
+      serendipity: 0.30,
     },
     initialOrbits: [
       { semiMajorAxis: 0.24, eccentricity: 0.10, angle: -2.2, argumentOfPeriapsis: 0.3, scaleDegree: 2 },
@@ -455,11 +491,13 @@ export function resolveSatellitePitch(
   registerLabel: string;
   harmonicZone: HarmonicZoneInfo;
 } {
+  const rootOverride = store.getState().modalRootOverride;
   const quantized = HarmonicEngine.quantizeSatellitePitch(
     satellite.semiMajorAxis,
     satellite.scaleDegree,
     seedId,
-    luminance
+    luminance,
+    rootOverride
   );
   return {
     note: quantized.note,
@@ -486,6 +524,7 @@ function interpolateVectors(
     viscosity: cosineInterp(v1.viscosity, v2.viscosity, t),
     nostalgia: cosineInterp(v1.nostalgia, v2.nostalgia, t),
     rarity: cosineInterp(v1.rarity, v2.rarity, t),
+    serendipity: cosineInterp(v1.serendipity, v2.serendipity, t),
     orbitalSpeedMultiplier: cosineInterp(
       v1.orbitalSpeedMultiplier,
       v2.orbitalSpeedMultiplier,
@@ -513,23 +552,35 @@ export function evaluateIsoSessionArc(
 
   if (p < 0.75) {
     const localT = p / 0.75;
+    const interp = interpolateVectors(startVec, targetVec, localT);
+    // Keep serendipity low (0.05) during the deep parasympathetic middle phase
     return {
       phase: 'co-regulation',
-      vector: interpolateVectors(startVec, targetVec, localT),
+      vector: {
+        ...interp,
+        serendipity: 0.05,
+      },
     };
   }
 
   if (p < 0.90) {
     return {
       phase: 'co-regulation',
-      vector: { ...targetVec },
+      vector: {
+        ...targetVec,
+        serendipity: 0.05,
+      },
     };
   }
 
   const reorientT = (p - 0.90) / 0.10;
   return {
     phase: 're-orientation',
-    vector: interpolateVectors(targetVec, ISO_REORIENTATION_VECTOR, reorientT),
+    vector: interpolateVectors(
+      { ...targetVec, serendipity: 0.05 },
+      ISO_REORIENTATION_VECTOR,
+      reorientT
+    ),
   };
 }
 
@@ -549,6 +600,7 @@ function createSatellitesForPreset(preset: SeedPreset): SatelliteNode[] {
 
 type StateListener = (state: AetheriumState) => void;
 type TriggerListener = (payload: SatelliteTriggerPayload) => void;
+type SerendipityListener = (payload: SerendipityEventPayload) => void;
 
 const STORAGE_KEY_MODE = 'aetherium.operating_mode.v1';
 const STORAGE_KEY_PRESETS = 'aetherium.saved_presets.v1';
@@ -557,6 +609,7 @@ class AetheriumStore {
   private state: AetheriumState;
   private listeners: Set<StateListener> = new Set();
   private triggerListeners: Set<TriggerListener> = new Set();
+  private serendipityListeners: Set<SerendipityListener> = new Set();
   private toastTimer: number | null = null;
 
   constructor() {
@@ -595,6 +648,9 @@ class AetheriumStore {
       },
       savedPresets,
       lastTriggerEvent: null,
+      lastSerendipityEvent: null,
+      modalRootOverride: null,
+      modalRootDegree: null,
       statusToast: null,
     };
   }
@@ -645,8 +701,20 @@ class AetheriumStore {
   public getActiveHarmonicZone(): HarmonicZoneInfo {
     return HarmonicEngine.resolveHarmonicZone(
       this.state.activeSeedId,
-      this.state.macros.luminance
+      this.state.macros.luminance,
+      this.state.modalRootOverride
     );
+  }
+
+  /**
+   * Returns the effective Serendipity value (0.0 to 1.0), enforcing the Clinical Safety Guard:
+   * automatically clamped to 0.0 when Bilateral EMDR mode is active in Practitioner mode.
+   */
+  public getEffectiveSerendipity(): number {
+    if (this.state.mode === 'practitioner' && this.state.practitioner.emdrBilateralEnabled) {
+      return 0.0;
+    }
+    return Math.max(0, Math.min(1, this.state.macros.serendipity));
   }
 
   public subscribe(listener: StateListener): () => void {
@@ -662,6 +730,39 @@ class AetheriumStore {
     return () => {
       this.triggerListeners.delete(listener);
     };
+  }
+
+  public onSerendipityEvent(listener: SerendipityListener): () => void {
+    this.serendipityListeners.add(listener);
+    return () => {
+      this.serendipityListeners.delete(listener);
+    };
+  }
+
+  public emitSerendipityEvent(payload: SerendipityEventPayload): void {
+    this.state = {
+      ...this.state,
+      lastSerendipityEvent: payload,
+    };
+    for (const listener of this.serendipityListeners) {
+      listener(payload);
+    }
+    this.emit();
+  }
+
+  public setModalRootOverride(rootNote: string | null, degree: 'IV' | 'VI' | null): void {
+    if (
+      this.state.modalRootOverride === rootNote &&
+      this.state.modalRootDegree === degree
+    ) {
+      return;
+    }
+    this.state = {
+      ...this.state,
+      modalRootOverride: rootNote,
+      modalRootDegree: degree,
+    };
+    this.emit();
   }
 
   private emit(): void {
@@ -707,10 +808,18 @@ class AetheriumStore {
     const preset = SEED_PRESETS[seedId];
     if (!preset) return;
 
+    const emdrActive =
+      this.state.mode === 'practitioner' && this.state.practitioner.emdrBilateralEnabled;
+
     this.state = {
       ...this.state,
       activeSeedId: seedId,
-      macros: { ...preset.defaultMacros },
+      modalRootOverride: null,
+      modalRootDegree: null,
+      macros: {
+        ...preset.defaultMacros,
+        serendipity: emdrActive ? 0.0 : preset.defaultMacros.serendipity,
+      },
       satellites: createSatellitesForPreset(preset),
     };
     this.showToast(`Seed Loaded: ${preset.name} (${preset.subtitle})`);
@@ -718,7 +827,15 @@ class AetheriumStore {
   }
 
   public setMacro<K extends keyof MacroParams>(key: K, value: number): void {
-    const clamped = Math.max(0, Math.min(1, value));
+    let clamped = Math.max(0, Math.min(1, value));
+    // Clinical Safety Guard: Clamp serendipity to 0.0 when Bilateral EMDR mode is active
+    if (
+      key === 'serendipity' &&
+      this.state.mode === 'practitioner' &&
+      this.state.practitioner.emdrBilateralEnabled
+    ) {
+      clamped = 0.0;
+    }
     this.state = {
       ...this.state,
       macros: {
@@ -905,12 +1022,29 @@ class AetheriumStore {
   }
 
   public updatePractitionerConfig(partial: Partial<PractitionerConfig>): void {
+    const nextPractitioner = {
+      ...this.state.practitioner,
+      ...partial,
+    };
+
+    // Clinical Safety Guard: Clamp serendipity to 0.0 when Bilateral EMDR mode is active
+    const nextMacros =
+      this.state.mode === 'practitioner' && nextPractitioner.emdrBilateralEnabled
+        ? { ...this.state.macros, serendipity: 0.0 }
+        : this.state.macros;
+
     this.state = {
       ...this.state,
-      practitioner: {
-        ...this.state.practitioner,
-        ...partial,
-      },
+      macros: nextMacros,
+      modalRootOverride:
+        this.state.mode === 'practitioner' && nextPractitioner.emdrBilateralEnabled
+          ? null
+          : this.state.modalRootOverride,
+      modalRootDegree:
+        this.state.mode === 'practitioner' && nextPractitioner.emdrBilateralEnabled
+          ? null
+          : this.state.modalRootDegree,
+      practitioner: nextPractitioner,
     };
     this.emit();
   }
@@ -927,6 +1061,8 @@ class AetheriumStore {
     );
 
     const reachedEnd = clampedElapsed >= totalSec;
+    const emdrClamped =
+      this.state.mode === 'practitioner' && this.state.practitioner.emdrBilateralEnabled;
 
     this.state = {
       ...this.state,
@@ -936,6 +1072,7 @@ class AetheriumStore {
         viscosity: Number(vector.viscosity.toFixed(3)),
         nostalgia: Number(vector.nostalgia.toFixed(3)),
         rarity: Number(vector.rarity.toFixed(3)),
+        serendipity: emdrClamped ? 0.0 : Number(vector.serendipity.toFixed(3)),
       },
       practitioner: {
         ...this.state.practitioner,
@@ -1029,6 +1166,7 @@ class AetheriumStore {
         viscosity: this.state.macros.viscosity,
         nostalgia: this.state.macros.nostalgia,
         rarity: this.state.macros.rarity,
+        serendipity: this.state.macros.serendipity,
       },
       core_offset: {
         x: this.state.coreOffset.x,
@@ -1073,6 +1211,7 @@ class AetheriumStore {
         viscosity: Number(parsed.macro_params?.viscosity ?? 0.5),
         nostalgia: Number(parsed.macro_params?.nostalgia ?? 0.4),
         rarity: Number(parsed.macro_params?.rarity ?? 0.2),
+        serendipity: Number(parsed.macro_params?.serendipity ?? 0.25),
       };
 
       const satellites: SatelliteNode[] = Array.isArray(parsed.satellites)

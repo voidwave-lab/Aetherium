@@ -3,6 +3,7 @@ import {
   MAX_SATELLITES,
   resolveSatellitePitch,
   SatelliteNode,
+  SerendipityEventPayload,
   store,
 } from '../state/store';
 
@@ -47,6 +48,67 @@ interface AmbientStar {
   depth: number;
 }
 
+/**
+ * Ephemeral Visual Phenomenon for Serendipity Event A ("Rubato Arpeggio"):
+ * A delicate comet / shooting star with a soft glowing tail that glides across the outer
+ * edge of the canvas in a gentle arc, pulsing softly as each note of the arpeggio sounds.
+ */
+interface SerendipityComet {
+  id: string;
+  createdAt: number;
+  durationMs: number;
+  startAngle: number;
+  endAngle: number;
+  radiusNormStart: number;
+  radiusNormEnd: number;
+  notes: string[];
+  stepOffsetsMs: number[];
+  triggeredStepIndex: number;
+  notePulse: number;
+  activeNoteLabel: string;
+  hue: number;
+  tail: Array<{ x: number; y: number }>;
+  sparks: Array<{
+    x: number;
+    y: number;
+    vx: number;
+    vy: number;
+    alpha: number;
+    noteLabel: string;
+  }>;
+}
+
+/**
+ * Ephemeral Visual Phenomenon for Serendipity Event B ("Modal Breeze / Root Shift"):
+ * A slow, aurora-like color ripple that expands outward from the Central Core across the background fog.
+ */
+interface ModalAuroraRipple {
+  id: string;
+  createdAt: number;
+  durationMs: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  degreeLabel: string;
+  rootLabel: string;
+  hueShift: number;
+}
+
+/**
+ * Ephemeral Visual Phenomenon for Serendipity Event C ("High-Octave Shimmer / Ghost Echo"):
+ * A crystalline high-octave shimmer halo that blooms softly in the upper canopy and dissolves into mist.
+ */
+interface GhostEchoHalo {
+  id: string;
+  xNorm: number;
+  yNorm: number;
+  radius: number;
+  maxRadius: number;
+  alpha: number;
+  label: string;
+  hue: number;
+}
+
 export class SanctuaryCanvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
@@ -64,6 +126,9 @@ export class SanctuaryCanvas {
   private ripples: MeridianRipple[] = [];
   private dissolveBursts: DissolveBurst[] = [];
   private ambientStars: AmbientStar[] = [];
+  private serendipityComets: SerendipityComet[] = [];
+  private modalAuroras: ModalAuroraRipple[] = [];
+  private ghostHalos: GhostEchoHalo[] = [];
 
   // Interaction state
   private hoveredSatelliteId: string | null = null;
@@ -107,6 +172,11 @@ export class SanctuaryCanvas {
     this.initAmbientStars();
     this.handleResize();
     this.bindEvents();
+
+    store.onSerendipityEvent((payload) => {
+      this.handleSerendipityVisualEvent(payload);
+    });
+
     this.startLoop();
   }
 
@@ -581,6 +651,85 @@ export class SanctuaryCanvas {
     }
 
     this.meridianFlash = Math.max(0, this.meridianFlash - 1.6 * dt);
+
+    // Update Serendipity Comets (Event A: Rubato Arpeggio)
+    for (let i = this.serendipityComets.length - 1; i >= 0; i--) {
+      const comet = this.serendipityComets[i];
+      const elapsedMs = now - comet.createdAt;
+      const progress = Math.min(1, elapsedMs / comet.durationMs);
+
+      const angle =
+        comet.startAngle + (comet.endAngle - comet.startAngle) * this.easeInOutSine(progress);
+      const rNorm =
+        comet.radiusNormStart + (comet.radiusNormEnd - comet.radiusNormStart) * progress;
+      const rPx = rNorm * maxOrbitRadius;
+      const headX = cx + Math.cos(angle) * rPx;
+      const headY = cy + Math.sin(angle) * (rPx * 0.86);
+
+      comet.tail.push({ x: headX, y: headY });
+      while (comet.tail.length > 42) {
+        comet.tail.shift();
+      }
+
+      // Check if a new note of the Rubato Arpeggio has sounded
+      while (
+        comet.triggeredStepIndex + 1 < comet.stepOffsetsMs.length &&
+        elapsedMs >= comet.stepOffsetsMs[comet.triggeredStepIndex + 1]
+      ) {
+        comet.triggeredStepIndex++;
+        comet.notePulse = 1.0;
+        comet.activeNoteLabel = comet.notes[comet.triggeredStepIndex] ?? '';
+        // Spawn a delicate stardust spark at the comet head for this arpeggio note
+        for (let s = 0; s < 5; s++) {
+          const sparkAngle = Math.random() * Math.PI * 2;
+          const speed = 8 + Math.random() * 18;
+          comet.sparks.push({
+            x: headX,
+            y: headY,
+            vx: Math.cos(sparkAngle) * speed,
+            vy: Math.sin(sparkAngle) * speed - 6,
+            alpha: 0.92,
+            noteLabel: s === 0 ? comet.activeNoteLabel : '',
+          });
+        }
+      }
+
+      comet.notePulse = Math.max(0, comet.notePulse - 2.4 * dt);
+
+      for (let s = comet.sparks.length - 1; s >= 0; s--) {
+        const sp = comet.sparks[s];
+        sp.x += sp.vx * dt;
+        sp.y += sp.vy * dt;
+        sp.alpha -= 0.72 * dt;
+        if (sp.alpha <= 0.01) {
+          comet.sparks.splice(s, 1);
+        }
+      }
+
+      if (elapsedMs >= comet.durationMs + 900) {
+        this.serendipityComets.splice(i, 1);
+      }
+    }
+
+    // Update Modal Breeze Aurora Ripples (Event B: Modal Breeze / Root Shift)
+    for (let i = this.modalAuroras.length - 1; i >= 0; i--) {
+      const aurora = this.modalAuroras[i];
+      aurora.radius += (aurora.maxRadius - aurora.radius) * 0.42 * dt + 22 * dt;
+      aurora.alpha -= 0.14 * dt;
+      if (aurora.alpha <= 0.01) {
+        this.modalAuroras.splice(i, 1);
+      }
+    }
+
+    // Update Ghost-Echo Shimmer Halos (Event C: High-Octave Shimmer)
+    for (let i = this.ghostHalos.length - 1; i >= 0; i--) {
+      const halo = this.ghostHalos[i];
+      halo.radius += (halo.maxRadius - halo.radius) * 0.65 * dt + 10 * dt;
+      halo.alpha -= 0.22 * dt;
+      if (halo.alpha <= 0.01) {
+        this.ghostHalos.splice(i, 1);
+      }
+    }
   }
 
   private render(now: number, _dt: number): void {
@@ -615,6 +764,9 @@ export class SanctuaryCanvas {
 
     this.ctx.fillStyle = nebulaGrad;
     this.ctx.fillRect(0, 0, this.width, this.height);
+
+    // 2b. Serendipity Event B: Slow Aurora-Like Color Ripple across the background fog
+    this.renderModalAuroraRipples(cx, cy, primaryHue, accentHue, luminance);
 
     // 3. Deep Starfield (attenuated by Fog mist)
     const starVisibility = Math.max(0.18, 1.0 - fog * 0.68);
@@ -672,6 +824,9 @@ export class SanctuaryCanvas {
 
     // 9. Dissolve Particle Bursts
     this.renderDissolveBursts();
+
+    // 9b. Serendipity Event A & C: Rubato Arpeggio Comets & Ghost-Echo Shimmer Halos
+    this.renderSerendipityPhenomena(luminance);
 
     // 10. The Central Attractor (The Core — synchronized with Layer A 0.05-0.15Hz Breathing LFO)
     this.renderCentralCore(cx, cy, primaryHue, accentHue, luminance, fog, timeSec);
@@ -1015,6 +1170,18 @@ export class SanctuaryCanvas {
     this.ctx.arc(cx, cy, coreRadius, 0, Math.PI * 2);
     this.ctx.fill();
 
+    // If a Serendipity "Modal Breeze" (IV or VI root shift) is active, display a subtle glowing badge
+    if (state.modalRootOverride && state.modalRootDegree) {
+      this.ctx.font = '500 10px "JetBrains Mono", monospace';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillStyle = `hsla(${(accentHue + 38) % 360}, 92%, 85%, ${0.65 + breath * 0.25})`;
+      this.ctx.fillText(
+        `MODAL BREEZE · ${state.modalRootDegree} (${state.modalRootOverride})`,
+        cx,
+        cy + coreRadius + 24
+      );
+    }
+
     this.ctx.restore();
   }
 
@@ -1182,6 +1349,234 @@ export class SanctuaryCanvas {
         this.ctx.fill();
       }
     }
+    this.ctx.restore();
+  }
+
+  private easeInOutSine(t: number): number {
+    return -(Math.cos(Math.PI * Math.max(0, Math.min(1, t))) - 1) * 0.5;
+  }
+
+  /**
+   * Spawns the corresponding Ephemeral Visual Phenomenon when SerendipityEngine fires an event:
+   * - 'rubato-arpeggio' -> Delicate comet / shooting star gliding across the outer arc & pulsing per note
+   * - 'modal-breeze'    -> Slow aurora-like color ripple expanding outward from the Central Core
+   * - 'ghost-echo'      -> Crystalline high-octave shimmer halo in the upper canopy
+   */
+  private handleSerendipityVisualEvent(payload: SerendipityEventPayload): void {
+    const state = store.getState();
+    const { maxOrbitRadius } = this.getCoreScreenCenter();
+    const accentHue = this.computeAccentHue(state.macros.luminance);
+
+    if (payload.kind === 'rubato-arpeggio') {
+      const direction = Math.random() < 0.5 ? 1 : -1;
+      const baseStart = -Math.PI * 0.5 + (Math.random() - 0.5) * 1.1;
+      const arcSpan = (0.75 + Math.random() * 0.45) * direction;
+      const firstNote = payload.notes[0] ?? '';
+
+      this.serendipityComets.push({
+        id: payload.id,
+        createdAt: performance.now(),
+        durationMs: payload.durationMs,
+        startAngle: baseStart - arcSpan * 0.5,
+        endAngle: baseStart + arcSpan * 0.5,
+        radiusNormStart: 0.92 + Math.random() * 0.1,
+        radiusNormEnd: 0.84 + Math.random() * 0.12,
+        notes: payload.notes,
+        stepOffsetsMs: payload.stepOffsetsMs ?? [0],
+        triggeredStepIndex: 0,
+        notePulse: 1.0,
+        activeNoteLabel: firstNote,
+        hue: (accentHue + 28) % 360,
+        tail: [],
+        sparks: [],
+      });
+      return;
+    }
+
+    if (payload.kind === 'modal-breeze') {
+      this.modalAuroras.push({
+        id: payload.id,
+        createdAt: performance.now(),
+        durationMs: payload.durationMs,
+        radius: 26,
+        maxRadius: maxOrbitRadius * 1.38,
+        alpha: 0.85,
+        degreeLabel: payload.modalDegree ?? 'IV',
+        rootLabel: payload.notes[0] ?? '',
+        hueShift: payload.modalDegree === 'IV' ? 36 : -34,
+      });
+      return;
+    }
+
+    if (payload.kind === 'ghost-echo') {
+      this.ghostHalos.push({
+        id: payload.id,
+        xNorm: 0.28 + Math.random() * 0.44,
+        yNorm: 0.16 + Math.random() * 0.22,
+        radius: 14,
+        maxRadius: 110 + state.macros.fog * 65,
+        alpha: 0.78,
+        label: payload.notes.join(' · '),
+        hue: (accentHue + 18) % 360,
+      });
+    }
+  }
+
+  /**
+   * Renders Serendipity Event B: Slow, aurora-like color ripples expanding outward
+   * from the Central Core across the background fog.
+   */
+  private renderModalAuroraRipples(
+    cx: number,
+    cy: number,
+    primaryHue: number,
+    accentHue: number,
+    luminance: number
+  ): void {
+    if (this.modalAuroras.length === 0) return;
+
+    this.ctx.save();
+    for (const aurora of this.modalAuroras) {
+      const innerR = Math.max(8, aurora.radius * 0.35);
+      const outerR = Math.max(innerR + 20, aurora.radius);
+      const auroraHue1 = (accentHue + aurora.hueShift + 360) % 360;
+      const auroraHue2 = (primaryHue - aurora.hueShift + 360) % 360;
+
+      const grad = this.ctx.createRadialGradient(cx, cy, innerR, cx, cy, outerR);
+      grad.addColorStop(0, 'rgba(7, 9, 14, 0)');
+      grad.addColorStop(
+        0.45,
+        `hsla(${auroraHue1}, 85%, ${55 + luminance * 20}%, ${aurora.alpha * 0.24})`
+      );
+      grad.addColorStop(
+        0.75,
+        `hsla(${auroraHue2}, 80%, ${62 + luminance * 18}%, ${aurora.alpha * 0.32})`
+      );
+      grad.addColorStop(1, 'rgba(7, 9, 14, 0)');
+
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(cx, cy, outerR, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Delicate iridescent aurora crest ring
+      this.ctx.strokeStyle = `hsla(${auroraHue1}, 90%, 78%, ${aurora.alpha * 0.38})`;
+      this.ctx.lineWidth = 2.0;
+      this.ctx.beginPath();
+      this.ctx.arc(cx, cy, aurora.radius * 0.74, 0, Math.PI * 2);
+      this.ctx.stroke();
+    }
+    this.ctx.restore();
+  }
+
+  /**
+   * Renders Serendipity Event A (Rubato Arpeggio Comets) and Event C (Ghost-Echo Shimmer Halos).
+   */
+  private renderSerendipityPhenomena(luminance: number): void {
+    this.ctx.save();
+
+    // 1. Render Ghost-Echo Shimmer Halos (Event C)
+    for (const halo of this.ghostHalos) {
+      const hx = halo.xNorm * this.width;
+      const hy = halo.yNorm * this.height;
+      const grad = this.ctx.createRadialGradient(hx, hy, 2, hx, hy, halo.radius);
+      grad.addColorStop(
+        0,
+        `hsla(${halo.hue}, 95%, ${82 + luminance * 14}%, ${halo.alpha * 0.52})`
+      );
+      grad.addColorStop(
+        0.5,
+        `hsla(${(halo.hue + 24) % 360}, 85%, 72%, ${halo.alpha * 0.22})`
+      );
+      grad.addColorStop(1, 'rgba(7, 9, 14, 0)');
+
+      this.ctx.fillStyle = grad;
+      this.ctx.beginPath();
+      this.ctx.arc(hx, hy, halo.radius, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.strokeStyle = `hsla(${halo.hue}, 92%, 86%, ${halo.alpha * 0.45})`;
+      this.ctx.lineWidth = 1.1;
+      this.ctx.beginPath();
+      this.ctx.arc(hx, hy, halo.radius * 0.58, 0, Math.PI * 2);
+      this.ctx.stroke();
+
+      this.ctx.fillStyle = `hsla(${halo.hue}, 90%, 88%, ${halo.alpha * 0.75})`;
+      this.ctx.font = '500 9.5px "JetBrains Mono", monospace';
+      this.ctx.textAlign = 'center';
+      this.ctx.fillText(`✧ ${halo.label}`, hx, hy - halo.radius * 0.58 - 7);
+    }
+
+    // 2. Render Rubato Arpeggio Comets / Shooting Stars (Event A)
+    const now = performance.now();
+    for (const comet of this.serendipityComets) {
+      const elapsed = now - comet.createdAt;
+      const fadeIn = Math.min(1, elapsed / 320);
+      const fadeOut = Math.max(0, 1 - Math.max(0, elapsed - comet.durationMs) / 900);
+      const envelopeAlpha = fadeIn * fadeOut;
+      if (envelopeAlpha <= 0.01 || comet.tail.length === 0) continue;
+
+      // Glowing comet tail segments
+      for (let i = 1; i < comet.tail.length; i++) {
+        const p0 = comet.tail[i - 1];
+        const p1 = comet.tail[i];
+        const frac = i / comet.tail.length;
+        const segAlpha = frac * frac * envelopeAlpha * (0.55 + comet.notePulse * 0.35);
+
+        this.ctx.strokeStyle = `hsla(${comet.hue}, 95%, ${76 + luminance * 18}%, ${segAlpha})`;
+        this.ctx.lineWidth = 0.8 + frac * (3.2 + comet.notePulse * 2.2);
+        this.ctx.lineCap = 'round';
+        this.ctx.beginPath();
+        this.ctx.moveTo(p0.x, p0.y);
+        this.ctx.lineTo(p1.x, p1.y);
+        this.ctx.stroke();
+      }
+
+      // Comet head pulsing softly on each arpeggio note
+      const head = comet.tail[comet.tail.length - 1];
+      const headRadius = 3.2 + comet.notePulse * 4.2;
+      const haloRadius = 16 + comet.notePulse * 24;
+
+      const headGlow = this.ctx.createRadialGradient(
+        head.x,
+        head.y,
+        1,
+        head.x,
+        head.y,
+        haloRadius
+      );
+      headGlow.addColorStop(0, `rgba(255, 255, 255, ${envelopeAlpha * 0.95})`);
+      headGlow.addColorStop(
+        0.35,
+        `hsla(${comet.hue}, 95%, 80%, ${envelopeAlpha * (0.55 + comet.notePulse * 0.35)})`
+      );
+      headGlow.addColorStop(1, 'rgba(7, 9, 14, 0)');
+
+      this.ctx.fillStyle = headGlow;
+      this.ctx.beginPath();
+      this.ctx.arc(head.x, head.y, haloRadius, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.beginPath();
+      this.ctx.arc(head.x, head.y, headRadius, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Stardust sparks & note labels shed at each arpeggio note pulse
+      for (const sp of comet.sparks) {
+        this.ctx.fillStyle = `hsla(${comet.hue}, 95%, 88%, ${sp.alpha * envelopeAlpha})`;
+        this.ctx.beginPath();
+        this.ctx.arc(sp.x, sp.y, 1.6, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        if (sp.noteLabel) {
+          this.ctx.font = '500 9.5px "JetBrains Mono", monospace';
+          this.ctx.textAlign = 'center';
+          this.ctx.fillText(sp.noteLabel, sp.x, sp.y - 8);
+        }
+      }
+    }
+
     this.ctx.restore();
   }
 

@@ -22,9 +22,10 @@ It is designed for two distinct user groups:
    - [Keplerian Orbital Physics & Meridian Trigger Detection](#2-keplerian-orbital-physics--meridian-trigger-detection)
    - [Harmonic Quantization & Modal Morphing Engine](#3-harmonic-quantization--modal-morphing-engine)
    - [Multi-Layer Procedural Web Audio & Psychoacoustic DSP Graph](#4-multi-layer-procedural-web-audio--psychoacoustic-dsp-graph)
-   - [Clinical Suite DSP & Automated ISO-Principle Vector Interpolation](#5-clinical-suite-dsp--automated-iso-principle-vector-interpolation)
-   - [Procedural 2D Atmospheric Rendering Pipeline](#6-procedural-2d-atmospheric-rendering-pipeline)
-   - [Rust / Tauri v1 Native Backend & Binary Optimization](#7-rust--tauri-v1-native-backend--binary-optimization)
+   - [Serendipity Engine: Stochastic Melodic Sparks & Ephemeral Phenomena](#5-serendipity-engine-stochastic-melodic-sparks--ephemeral-phenomena)
+   - [Clinical Suite DSP & Automated ISO-Principle Vector Interpolation](#6-clinical-suite-dsp--automated-iso-principle-vector-interpolation)
+   - [Procedural 2D Atmospheric Rendering Pipeline](#7-procedural-2d-atmospheric-rendering-pipeline)
+   - [Rust / Tauri v1 Native Backend & Binary Optimization](#8-rust--tauri-v1-native-backend--binary-optimization)
 3. [Part III: For Developers (Building from Source)](#part-iii-for-developers-building-from-source)
 
 ---
@@ -79,6 +80,7 @@ Designed for pure, distraction-free tactile interaction:
    - **Viscosity (*Crystalline ↔ Dense*):** Slows the orbiting satellites down, lengthens their visual motion trails, and softens note attacks into slow swells.
    - **Nostalgia (*Pristine ↔ Worn*):** Adds gentle analog tape warmth, subtle pitch drift, distant rain/vinyl texture, and a soft sepia film grain.
    - **Rarity (*Present ↔ Silence*):** Controls how often a satellite crossing rests in silence instead of playing a note, giving the room space to breathe.
+   - **Serendipity (*Stillness ↔ Sparks*):** Prevents auditory habituation by introducing gentle, unhurried musical surprises at irregular intervals (every 8 to 25 seconds)—such as a human-like *Rubato Arpeggio* accompanied by a shooting star across the outer canvas, a temporary *Modal Breeze* harmonic shift (`IV` or `VI`) with an expanding aurora ripple from the Core, or a distant *High-Octave Shimmer* in the upper mist. Set to `0% (Stillness)` for pure orbital predictability or raise toward `100% (Sparks)` for an evolving, living sky.
    - **Fade to Silence (Sleep Timer):** Click `15m`, `30m`, or `60m` next to the crescent moon icon to have Aetherium gently fade out and stop automatically.
 
 ---
@@ -97,11 +99,12 @@ Switching to **Practitioner / Guide** mode reveals the collapsible **Practitione
      1. Select your session length (`20m`, `45m`, `50m` standard clinical hour, or `60m`).
      2. Choose **Phase 1 — Mirroring (Start State)** to match how the patient arrives (e.g., *High Agitation / Tension*, *Melancholic / Heavy*, or *Dissociated / Flat*).
      3. Choose **Phase 2 — Co-Regulation (75% Target State)** (e.g., *Parasympathetic Rest / Safe Grounding* or *Warm Openness*).
-     4. Click **Start Session Arc**. Aetherium automatically interpolates the musical scale, orbital pace, reverb mist, and harmonic warmth across the session—and during the **final 10% (Phase 3 — Re-Orientation)**, it gently lifts luminance and clarity so the patient leaves the office alert and grounded rather than overly sedated.
+     4. Click **Start Session Arc**. Aetherium automatically interpolates the musical scale, orbital pace, reverb mist, and harmonic warmth across the session—keeping **Serendipity** low (`5%`) during the deep parasympathetic middle phase and gently ramping it up (`35%`) alongside luminance and clarity during the **final 10% (Phase 3 — Re-Orientation)** so the patient's attention is softly awakened before leaving the office.
 
 3. **Bilateral Grounding (EMDR / Somatic Panner)**
    - *How It Works:* Toggle **Bilateral Grounding** on to route the harmonic voices and a soft rhythmic pulse smoothly between the **Left** and **Right** audio channels (`0.2 Hz` slow meditative sweep up to `1.5 Hz` active processing pace, with adjustable stereo width from `0%` to `100%`).
    - *Visual + Auditory Tracking:* A soft cyan luminescence simultaneously oscillates across the left and right edges of the screen (paired with a horizontal tracking beacon) so the patient can track the bilateral rhythm visually, auditorily, or both.
+   - *Clinical Safety Guard (Serendipity Auto-Lock):* Whenever Bilateral EMDR mode is active, Aetherium automatically clamps **Serendipity** to `0%` (canceling any active comets or modal shifts) so random melodic or visual sparks never distract the patient from bilateral tracking.
 
 4. **Somatic Sub-Bass ($40\text{–}60\text{ Hz}$) & Binaural Theta Entrainment**
    - **Somatic Sub-Bass Anchor ($40\text{–}60\text{ Hz}$):** Boosts a pure, warm sub-fundamental sine wave that creates a comforting physical sensation of grounding in the room or headphones for anxious or dissociating patients.
@@ -137,7 +140,8 @@ flowchart TD
 
     subgraph AUDIO["Procedural Web Audio & Psychoacoustic DSP"]
         HE["HarmonicEngine.ts (Tonal Modal Quantizer)"]
-        AE["AudioEngine.ts (Tone.js 3-Layer Synth & Clinical Bus)"]
+        SE["SerendipityEngine.ts (Stochastic Melodic Sparks)"]
+        AE["AudioEngine.ts (Tone.js Multi-Layer Synth & Clinical Bus)"]
     end
 
     subgraph NATIVE["Tauri v1 Native Rust Core (src-tauri)"]
@@ -146,10 +150,13 @@ flowchart TD
 
     UI -->|Dispatches Actions| ST
     ST -->|State Subscriptions| UI
-    ST -->|Macro & Orbit State| SC
+    ST -->|Macro, Orbit & Serendipity Events| SC
     SC -->|Meridian Crossing: onSatelliteTrigger| ST
+    SE -->|Rubato Arpeggio, Modal Breeze & Ghost Echo| ST
+    SE -->|Stochastic Audio Triggers| AE
     ST -->|Trigger Payload & Macros| AE
     HE -->|Scale & Register Quantization| ST
+    HE -->|Extended Voicings, IV/VI Roots & Dyads| SE
     HE -->|Drone Voicings & Sub-Roots| AE
     AE -->|0.05-0.15Hz Breath & EMDR Phase| SC
     UI <-->|Tauri IPC invoke| RS
@@ -282,7 +289,33 @@ $$y(x) = \frac{\tanh(k \cdot x)}{\tanh(k)}, \quad k = 0.6 + 2.2N$$
 
 ---
 
-## 5. Clinical Suite DSP & Automated ISO-Principle Vector Interpolation
+## 5. Serendipity Engine: Stochastic Melodic Sparks & Ephemeral Phenomena
+
+Implemented in [`src/audio/SerendipityEngine.ts`](./src/audio/SerendipityEngine.ts), [`src/audio/HarmonicEngine.ts`](./src/audio/HarmonicEngine.ts), and [`src/canvas/SanctuaryCanvas.ts`](./src/canvas/SanctuaryCanvas.ts), the **Serendipity** module ($S \in [0.0, 1.0]$) prevents auditory habituation across long sessions while preserving a non-startling, meditative acoustic envelope.
+
+### 1. Inverse-Scaled Stochastic Evaluation Scheduler
+When playback is active and $S_{\text{eff}} > 0.01$, `SerendipityEngine` schedules its next evaluation window $[T_{\min}, T_{\max}]$ inversely proportional to $S_{\text{eff}}$:
+
+$$T_{\min}(S_{\text{eff}}) = 8.0 + 11.0(1 - S_{\text{eff}})\text{ s}, \quad T_{\max}(S_{\text{eff}}) = 12.0 + 13.0(1 - S_{\text{eff}})\text{ s}$$
+
+At low Serendipity ($S_{\text{eff}} \to 0.05$), events occur sparsely every $18.5\text{–}24.4\text{ seconds}$; at maximum Serendipity ($S_{\text{eff}} = 1.0$), events bloom every $8.0\text{–}12.0\text{ seconds}$.
+
+### 2. Weighted Musical Phenomena & Synchronized Canvas Visuals
+On each evaluation tick, a uniform random draw $u \sim \mathcal{U}(0, 1)$ selects one of three musical-visual events:
+
+| Event Type | Weight | Musical & Psychoacoustic Implementation | Ephemeral Canvas Phenomenon (`SanctuaryCanvas.ts`) |
+| :--- | :--- | :--- | :--- |
+| **Event A: Rubato Arpeggio** | **60%** ($u < 0.60$) | Picks $N \in \{3, 4, 5\}$ notes from the active scale favoring warm extensions (**Root, 5th, 7th, 9th, 11th** in **Octaves 4–5**). Plays them sequentially with humanized, decelerating rubato inter-onset intervals ($\Delta t_i = 350 + 430(i/(N-1))^{1.45} + \epsilon\text{ ms} \in [350, 900]\text{ ms}$) and low tapering velocity ($0.18\text{–}0.30$). | Spawns a **Shooting Star / Comet** (`SerendipityComet`) gliding along the outer orbital arc ($0.84\text{–}1.02\ R_{\max}$). Its glowing tail and nucleus pulse in synchrony with each note's exact timestamp, shedding stardust motes labeled with the note name. |
+| **Event B: Modal Breeze / Root Shift** | **20%** ($0.60 \le u < 0.80$) | Temporarily shifts the Core Drone voicing, somatic sub-bass, and satellite pitch quantization root to the **Subdominant ($\text{IV}$)** or **Submediant ($\text{VI}$)** degree of the current scale for $16\text{–}24\text{ seconds}$, then glides smoothly back to the home tonic ($\text{I}$). | Spawns a slow, multi-stop **Aurora Color Ripple** (`ModalAuroraRipple`) expanding radially outward from the Central Core across the background fog, accompanied by a subtle `MODAL BREEZE · IV / VI` telemetry badge below the Core. |
+| **Event C: High-Octave Shimmer / Ghost Echo** | **20%** ($u \ge 0.80$) | Triggers a crystalline harmonic dyad (**5th** or **3rd** interval in **Octave 5**) on a dedicated `fatsine` AM synth (`ghostShimmerSynth`) routed **100% wet** through a dedicated long-tail convolution reverb bus (`ghostShimmerReverb`, `decay: 9.5s`, `wet: 1.0`). | Blooms a translucent **High-Altitude Shimmer Halo** (`GhostEchoHalo`) in the upper celestial canopy that slowly expands and dissolves into the mist. |
+
+### 3. Clinical Safety Guards in Practitioner Mode
+- **Bilateral EMDR Auto-Clamp:** Whenever Bilateral Stimulation (`emdrBilateralEnabled`) is active in **Practitioner / Guide** mode, `store.getEffectiveSerendipity()` clamps $S_{\text{eff}} = 0.0$, cancels any pending rubato arpeggio steps, and immediately restores the home root ($\text{I}$) so unexpected melodic or visual events never interfere with bilateral ocular/auditory tracking.
+- **ISO-Principle Session Arc Pacing:** During automated ISO-Principle sessions (`evaluateIsoSessionArc`), `serendipity` is held low at `0.05` (`5%`) throughout the deep parasympathetic **Co-Regulation Phase** ($0.22 \le p < 0.90$) and smoothly cosine-interpolated up to `0.35` (`35%`) during the final 10% **Re-Orientation Phase** ($0.90 \le p \le 1.00$) to gently re-awaken the patient's orientation at the conclusion of therapy.
+
+---
+
+## 6. Clinical Suite DSP & Automated ISO-Principle Vector Interpolation
 
 ### 1. Vocal-Range Acoustic Carving (Dialogue Mode)
 Inserts a parametric peaking EQ stage (`Tone.Filter` with `type: 'peaking'`, `frequency: 1100 Hz`, `Q: 0.7`, `gain` adjustable from `0 dB` to `-12 dB`) on the master bus downstream of the reverb/delay network. Because $Q = 0.7$ spans roughly two octaves around $1.1\text{ kHz}$, it carves a transparent acoustic pocket across the fundamental and formant frequencies of human speech ($400\text{ Hz} – 2.5\text{ kHz}$) while leaving sub-bass ($40\text{–}150\text{ Hz}$) and high air ($>3.5\text{ kHz}$) untouched.
@@ -309,16 +342,17 @@ Simultaneously, `SanctuaryCanvas.renderBilateralVisualGrounding` queries `audioE
 
 ---
 
-## 6. Procedural 2D Atmospheric Rendering Pipeline
+## 7. Procedural 2D Atmospheric Rendering Pipeline
 
 To keep the native binary compact and GPU-friendly across integrated graphics, `SanctuaryCanvas.ts` implements custom atmospheric effects in hardware-accelerated HTML5 2D Canvas:
 - **Luminance Palette Morphing:** Primary and accent HSL hues interpolate continuously from deep slate-indigo ($234^\circ$) through cyan ($193^\circ$) to warm solar amber ($42^\circ$).
 - **Viscous Trail Ring Buffers:** Each satellite maintains a ring buffer of historical screen coordinates whose length scales dynamically with `viscosity` ($14$ to $86$ vertices), rendered with quadratic alpha tapering and canvas Gaussian blur (`ctx.filter = blur(...)`) driven by `fog`.
+- **Ephemeral Serendipity Phenomena:** Renders multi-segment shooting-star comets synced to rubato note timestamps, iridescent radial aurora waves during `IV`/`VI` modal root shifts, and high-octave shimmer halos.
 - **Nostalgia Procedural Film Grain & Tape Jitter:** An offscreen $180 \times 180$ RGBA noise tile is pre-generated at startup and tiled across the viewport with sub-frame UV offsets and a radial sepia vignette, while satellite screen coordinates receive a deterministic multi-sine positional jitter proportional to `nostalgia`.
 
 ---
 
-## 7. Rust / Tauri v1 Native Backend & Binary Optimization
+## 8. Rust / Tauri v1 Native Backend & Binary Optimization
 
 Implemented in [`src-tauri/src/main.rs`](./src-tauri/src/main.rs) and [`src-tauri/Cargo.toml`](./src-tauri/Cargo.toml):
 - **Schema-Validated Persistence:** The `save_constellation_json` and `load_constellation_json` Tauri commands validate every preset file against `ConstellationFilePayload` via `serde` and `serde_json` before reading or writing to the OS AppData directory (`$APPDATA/constellations/*.aether.json`) or user-selected file paths.
@@ -379,14 +413,15 @@ Aetherium/
     ├── main.ts                     # Application bootstrap
     ├── state/store.ts              # Reactive store & ISO-Principle vector interpolation engine
     ├── audio/
-    │   ├── HarmonicEngine.ts       # Luminance modal quantization & orbital register mapping
-    │   └── AudioEngine.ts          # 3-layer procedural Tone.js synth + clinical DSP bus
+    │   ├── HarmonicEngine.ts       # Luminance modal quantization, IV/VI shifts & register mapping
+    │   ├── SerendipityEngine.ts    # Stochastic rubato arpeggios, modal breezes & ghost shimmers
+    │   └── AudioEngine.ts          # Multi-layer procedural Tone.js synth + clinical DSP bus
     ├── canvas/
-    │   └── SanctuaryCanvas.ts      # 60fps Keplerian orbital physics, Meridian & EMDR shaders
+    │   └── SanctuaryCanvas.ts      # 60fps Keplerian physics, Meridian, comets, auroras & EMDR glow
     └── components/
         ├── OnboardingModal.ts      # "Select Your Space" initial launch modal
         ├── TopBar.ts               # Mode switcher pill, telemetry & JSON export/import
-        ├── PoeticDock.ts           # Bottom Seed selector, 4 Macro sliders, Rarity & Sleep Timer
+        ├── PoeticDock.ts           # 8 Seed presets, 6 Poetic sliders (incl. Serendipity) & Sleep Timer
         └── PractitionerDock.ts     # Collapsible lateral clinical suite (Dialogue EQ, ISO Arc, EMDR)
 ```
 
