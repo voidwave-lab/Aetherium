@@ -105,11 +105,11 @@ jobs:
         with:
           node-version: 24
 
-      - name: Setup Java JDK 17 for Android Gradle
+      - name: Setup Java JDK 21 for Android Gradle
         uses: actions/setup-java@v5
         with:
           distribution: 'temurin'
-          java-version: '17'
+          java-version: '21'
 
       - name: Install Dependencies & Capacitor Android Tooling
         run: |
