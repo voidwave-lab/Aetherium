@@ -23,6 +23,7 @@ import {
   MAX_SATELLITES,
   store,
 } from '../state/store';
+import { renderMeridianEclipseEmblem } from './AppEmblem';
 
 function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_IPC__' in window;
@@ -61,9 +62,9 @@ export class TopBar {
             type="button"
             id="btn-open-space-modal"
             title="Open Space Selector"
-            class="glass-pill flex items-center gap-2.5 px-3.5 py-2 rounded-full text-left group"
+            class="glass-pill flex items-center gap-2.5 px-3 py-1.5 rounded-full text-left group"
           >
-            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.85)] group-hover:scale-110 transition-transform"></span>
+            ${renderMeridianEclipseEmblem('w-6 h-6 rounded-lg shadow-[0_0_12px_rgba(34,211,238,0.35)] group-hover:scale-105 transition-transform')}
             <span class="text-xs font-semibold tracking-[0.18em] uppercase text-slate-100">Aetherium</span>
             <span id="topbar-scale-badge" class="hidden sm:inline-block text-[11px] font-mono text-slate-400 border-l border-slate-700/70 pl-2.5">
               D Dorian (min7/add9)

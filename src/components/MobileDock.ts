@@ -28,6 +28,7 @@ import {
   SleepTimerDuration,
   store,
 } from '../state/store';
+import { renderMeridianEclipseEmblem } from './AppEmblem';
 
 interface MacroControlMeta {
   key: keyof MacroParams;
@@ -127,7 +128,7 @@ export class MobileDock {
   private buildDOM(): void {
     this.topBar.innerHTML = `
       <div class="pointer-events-auto flex items-center gap-2.5 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-3 py-1.5 shadow-lg">
-        <div class="w-2 h-2 rounded-full bg-sky-400 shadow-[0_0_8px_rgba(56,189,248,0.85)]"></div>
+        ${renderMeridianEclipseEmblem('w-6 h-6 rounded-lg shadow-[0_0_10px_rgba(34,211,238,0.3)]')}
         <div class="flex flex-col">
           <div class="flex items-center gap-1.5">
             <span class="text-[11px] font-semibold tracking-[0.16em] uppercase text-slate-100">Aetherium</span>

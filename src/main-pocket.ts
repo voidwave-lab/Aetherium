@@ -24,6 +24,7 @@ import { HarmonicEngine } from './audio/HarmonicEngine';
 import { MobileAudioBridge } from './audio/MobileAudioBridge';
 import { SanctuaryCanvas } from './canvas/SanctuaryCanvas';
 import { AboutModal } from './components/AboutModal';
+import { renderMeridianEclipseEmblem } from './components/AppEmblem';
 import { MobileDock } from './components/MobileDock';
 import { store } from './state/store';
 
@@ -40,8 +41,7 @@ function createPocketAwakenOverlay(
     <div class="relative flex flex-col items-center max-w-xs">
       <div class="relative w-24 h-24 mb-7 flex items-center justify-center">
         <div class="absolute inset-0 rounded-full bg-sky-500/15 animate-ping" style="animation-duration: 3.4s;"></div>
-        <div class="absolute inset-2 rounded-full border border-indigo-400/35 bg-slate-900/80 backdrop-blur-md"></div>
-        <div class="w-4 h-4 rounded-full bg-sky-300 shadow-[0_0_24px_rgba(125,211,252,0.95)]"></div>
+        ${renderMeridianEclipseEmblem('w-20 h-20 rounded-2xl shadow-[0_0_32px_rgba(34,211,238,0.35)]')}
       </div>
 
       <span class="text-[10px] font-mono uppercase tracking-[0.28em] text-sky-300/85 mb-2">

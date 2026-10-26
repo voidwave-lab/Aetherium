@@ -20,6 +20,7 @@
 
 import { AudioEngine } from '../audio/AudioEngine';
 import { OperatingMode, store } from '../state/store';
+import { renderMeridianEclipseEmblem } from './AppEmblem';
 
 export class OnboardingModal {
   private root: HTMLElement;
@@ -48,9 +49,14 @@ export class OnboardingModal {
 
         <!-- Header -->
         <div class="relative text-center mb-9">
-          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/80 border border-slate-700/50 text-[11px] font-mono uppercase tracking-[0.22em] text-indigo-300/90 mb-4">
-            <span class="w-1.5 h-1.5 rounded-full bg-indigo-400 animate-pulse"></span>
-            Aetherium Orbital Sanctuary
+          <div class="flex justify-center mb-4">
+            <div class="p-1.5 rounded-2xl bg-slate-950/90 border border-indigo-500/30 shadow-[0_0_32px_rgba(34,211,238,0.18)]">
+              ${renderMeridianEclipseEmblem('w-14 h-14 rounded-xl')}
+            </div>
+          </div>
+          <div class="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-slate-900/80 border border-slate-700/50 text-[11px] font-mono uppercase tracking-[0.22em] text-indigo-300/90 mb-3">
+            <span class="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse"></span>
+            Aetherium Orbital Sanctuary // voidwave-lab
           </div>
           <h1 class="text-2xl md:text-3xl font-light tracking-wide text-slate-100">
             Select Your Space

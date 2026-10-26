@@ -229,6 +229,23 @@ export class MobileAudioBridge {
           title: preset.name,
           artist: 'Aetherium // voidwave-lab',
           album: `${preset.subtitle} · ${zone.label}`,
+          artwork: [
+            {
+              src: 'icons/icon-192.png',
+              sizes: '192x192',
+              type: 'image/png',
+            },
+            {
+              src: 'icons/icon-512.png',
+              sizes: '512x512',
+              type: 'image/png',
+            },
+            {
+              src: 'app-icon.svg',
+              sizes: '1024x1024',
+              type: 'image/svg+xml',
+            },
+          ],
         });
       }
       navigator.mediaSession.playbackState = state.isPlaying ? 'playing' : 'paused';

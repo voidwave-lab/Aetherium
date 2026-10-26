@@ -6,7 +6,10 @@ const CACHE_NAME = 'aetherium-pocket-v1';
 const PRECACHE_URLS = [
   './pocket.html',
   './manifest.json',
-  './icons/aetherium-icon.svg',
+  './app-icon.svg',
+  './icons/icon-192.png',
+  './icons/icon-512.png',
+  './icons/apple-touch-icon.png',
 ];
 
 self.addEventListener('install', (event) => {

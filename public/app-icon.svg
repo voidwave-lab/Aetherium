@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    SPDX-License-Identifier: GPL-3.0-or-later
+    Aetherium Official Emblem: "The Meridian Eclipse" (voidwave-lab)
+    1024x1024 Master Vector Artwork
+  -->
+  <defs>
+    <!-- 1. Deep Obsidian Void Atmospheric Background (#111526 center -> #07090e -> #05070b edges) -->
+    <radialGradient id="void-bg" cx="50%" cy="50%" r="72%" fx="50%" fy="46%">
+      <stop offset="0%" stop-color="#111526"/>
+      <stop offset="56%" stop-color="#07090e"/>
+      <stop offset="100%" stop-color="#05070b"/>
+    </radialGradient>
+
+    <!-- 2. Acoustic Fog / Multi-Stop Halo Gradient (Violet #6d28d9 @ 25% & Cyan #06b6d4 @ 20%) -->
+    <radialGradient id="acoustic-fog-violet" cx="46%" cy="52%" r="44%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.32"/>
+      <stop offset="45%" stop-color="#6d28d9" stop-opacity="0.25"/>
+      <stop offset="100%" stop-color="#6d28d9" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="acoustic-fog-cyan" cx="54%" cy="44%" r="42%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.26"/>
+      <stop offset="50%" stop-color="#06b6d4" stop-opacity="0.20"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+
+    <radialGradient id="meridian-top-mist" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.32"/>
+      <stop offset="55%" stop-color="#06b6d4" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#06b6d4" stop-opacity="0"/>
+    </radialGradient>
+
+    <filter id="fog-blur" x="-30%" y="-30%" width="160%" height="160%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="45"/>
+    </filter>
+
+    <filter id="spark-bloom" x="-80%" y="-80%" width="260%" height="260%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="16" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <filter id="rim-glow" x="-25%" y="-25%" width="150%" height="150%" color-interpolation-filters="sRGB">
+      <feGaussianBlur stdDeviation="10" result="rimBlur"/>
+      <feMerge>
+        <feMergeNode in="rimBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+
+    <!-- 3. Core Drone Eclipse Sphere Fill & Rim Gradient -->
+    <radialGradient id="eclipse-core-fill" cx="46%" cy="42%" r="60%">
+      <stop offset="0%" stop-color="#0e1322"/>
+      <stop offset="72%" stop-color="#07090e"/>
+      <stop offset="100%" stop-color="#04060a"/>
+    </radialGradient>
+
+    <linearGradient id="eclipse-rim-grad" x1="15%" y1="10%" x2="85%" y2="90%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.92"/>
+      <stop offset="48%" stop-color="#8b5cf6" stop-opacity="0.68"/>
+      <stop offset="100%" stop-color="#f59e0b" stop-opacity="0.45"/>
+    </linearGradient>
+
+    <!-- 4. Keplerian Elliptical Orbit Gradients -->
+    <linearGradient id="orbit-grad-primary" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.88"/>
+      <stop offset="50%" stop-color="#8b5cf6" stop-opacity="0.52"/>
+      <stop offset="100%" stop-color="#22d3ee" stop-opacity="0.18"/>
+    </linearGradient>
+
+    <linearGradient id="orbit-grad-secondary" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.72"/>
+      <stop offset="45%" stop-color="#22d3ee" stop-opacity="0.58"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.20"/>
+    </linearGradient>
+
+    <!-- 5. 12 O'Clock Meridian Beam & Spark Gradients -->
+    <linearGradient id="meridian-beam" x1="50%" y1="6%" x2="50%" y2="50%">
+      <stop offset="0%" stop-color="#22d3ee" stop-opacity="0.0"/>
+      <stop offset="36%" stop-color="#e0f2fe" stop-opacity="0.85"/>
+      <stop offset="78%" stop-color="#22d3ee" stop-opacity="0.38"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0.0"/>
+    </linearGradient>
+
+    <radialGradient id="meridian-spark-halo" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="#ffffff" stop-opacity="1"/>
+      <stop offset="28%" stop-color="#fef3c7" stop-opacity="0.92"/>
+      <stop offset="58%" stop-color="#22d3ee" stop-opacity="0.58"/>
+      <stop offset="100%" stop-color="#8b5cf6" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Full-Bleed Obsidian Void Background -->
+  <rect width="1024" height="1024" fill="url(#void-bg)"/>
+
+  <!-- Subtle Distant Starfield Dust -->
+  <g fill="#e2e8f0" opacity="0.42">
+    <circle cx="176" cy="214" r="2.2" opacity="0.55"/>
+    <circle cx="842" cy="196" r="2.6" fill="#bae6fd" opacity="0.7"/>
+    <circle cx="868" cy="744" r="2.0" opacity="0.45"/>
+    <circle cx="164" cy="792" r="2.4" fill="#ddd6fe" opacity="0.6"/>
+    <circle cx="288" cy="134" r="1.8" opacity="0.35"/>
+    <circle cx="748" cy="862" r="2.2" fill="#fde68a" opacity="0.5"/>
+  </g>
+
+  <!-- Acoustic Fog / Multi-Stop Gaussian Blur Halo (stdDeviation="45") -->
+  <g filter="url(#fog-blur)">
+    <circle cx="484" cy="528" r="350" fill="url(#acoustic-fog-violet)"/>
+    <circle cx="542" cy="468" r="330" fill="url(#acoustic-fog-cyan)"/>
+    <ellipse cx="512" cy="204" rx="160" ry="118" fill="url(#meridian-top-mist)"/>
+  </g>
+
+  <!-- Outer Faint Harmonic Reference Ring -->
+  <circle
+    cx="512"
+    cy="512"
+    r="412"
+    fill="none"
+    stroke="#22d3ee"
+    stroke-opacity="0.11"
+    stroke-width="1.5"
+    stroke-dasharray="4 10"
+  />
+
+  <!-- Intersecting Keplerian Elliptical Orbits (Passing Through 12 O'Clock Meridian at 512, 204) -->
+  <g>
+    <!-- Orbit 1: Tilted -22 deg, sweeping through (512, 204) -->
+    <ellipse
+      cx="512"
+      cy="512"
+      rx="376"
+      ry="292"
+      transform="rotate(-22 512 512)"
+      fill="none"
+      stroke="url(#orbit-grad-primary)"
+      stroke-width="3.2"
+    />
+    <!-- Orbit 2: Tilted +22 deg, intersecting at 12 O'Clock North Meridian -->
+    <ellipse
+      cx="512"
+      cy="512"
+      rx="376"
+      ry="292"
+      transform="rotate(22 512 512)"
+      fill="none"
+      stroke="url(#orbit-grad-secondary)"
+      stroke-width="3.2"
+    />
+    <!-- Inner Fast Harmonic Orbit -->
+    <ellipse
+      cx="512"
+      cy="512"
+      rx="246"
+      ry="218"
+      transform="rotate(-8 512 512)"
+      fill="none"
+      stroke="#8b5cf6"
+      stroke-opacity="0.34"
+      stroke-width="2"
+    />
+  </g>
+
+  <!-- Secondary Orbiting Satellites -->
+  <g>
+    <!-- Lower-Left Warm Amber Satellite -->
+    <circle cx="208" cy="642" r="18" fill="#f59e0b" fill-opacity="0.22"/>
+    <circle cx="208" cy="642" r="7.5" fill="#fde68a"/>
+    <!-- Right-Mid Violet/Cyan Satellite -->
+    <circle cx="792" cy="414" r="16" fill="#8b5cf6" fill-opacity="0.26"/>
+    <circle cx="792" cy="414" r="6.5" fill="#c4b5fd"/>
+  </g>
+
+  <!-- 12 O'Clock North Meridian Luminescence Line -->
+  <line
+    x1="512"
+    y1="82"
+    x2="512"
+    y2="352"
+    stroke="url(#meridian-beam)"
+    stroke-width="3.5"
+    stroke-linecap="round"
+  />
+  <line
+    x1="512"
+    y1="104"
+    x2="512"
+    y2="512"
+    stroke="#bae6fd"
+    stroke-opacity="0.22"
+    stroke-width="1.5"
+    stroke-dasharray="5 9"
+  />
+
+  <!-- The Core Drone: Central Dark Eclipse Sphere (r="160") with Glowing Cyan/Violet Rim -->
+  <g>
+    <!-- Outer Corona Bloom around the Eclipse Core -->
+    <circle
+      cx="512"
+      cy="512"
+      r="166"
+      fill="none"
+      stroke="url(#eclipse-rim-grad)"
+      stroke-width="6"
+      opacity="0.65"
+      filter="url(#rim-glow)"
+    />
+    <!-- Obsidian Eclipse Sphere (r="160") -->
+    <circle
+      cx="512"
+      cy="512"
+      r="160"
+      fill="url(#eclipse-core-fill)"
+      stroke="url(#eclipse-rim-grad)"
+      stroke-width="3.2"
+    />
+    <!-- Subtle Inner Crescent Specular Highlight (Top-North Meridian Facing) -->
+    <path
+      d="M 366 446 A 160 160 0 0 1 658 446"
+      fill="none"
+      stroke="#67e8f9"
+      stroke-opacity="0.48"
+      stroke-width="2.5"
+      stroke-linecap="round"
+    />
+    <!-- Deep Sub-Fundamental Heart Pulse Point -->
+    <circle cx="512" cy="512" r="32" fill="#22d3ee" fill-opacity="0.08"/>
+    <circle cx="512" cy="512" r="5" fill="#e0f2fe" fill-opacity="0.65"/>
+  </g>
+
+  <!-- The 12 O'Clock Meridian Spark (y="204"): Satellite Crossing with Acoustic Ripple Rings -->
+  <g transform="translate(512, 204)">
+    <!-- Concentric Acoustic Trigger Ripples -->
+    <circle r="86" fill="none" stroke="#22d3ee" stroke-opacity="0.18" stroke-width="1.6"/>
+    <circle r="58" fill="none" stroke="#67e8f9" stroke-opacity="0.34" stroke-width="2.0"/>
+    <circle r="36" fill="none" stroke="#fde68a" stroke-opacity="0.52" stroke-width="2.2"/>
+
+    <!-- Radial Cyan/Amber Bloom Halo -->
+    <circle r="54" fill="url(#meridian-spark-halo)" filter="url(#spark-bloom)"/>
+
+    <!-- Horizontal & Vertical Starlight Glint -->
+    <line x1="-38" y1="0" x2="38" y2="0" stroke="#e0f2fe" stroke-opacity="0.75" stroke-width="2" stroke-linecap="round"/>
+    <line x1="0" y1="-38" x2="0" y2="38" stroke="#fef3c7" stroke-opacity="0.85" stroke-width="2" stroke-linecap="round"/>
+
+    <!-- Bright Glowing Satellite Node (r="18") -->
+    <circle
+      r="18"
+      fill="#ffffff"
+      stroke="#22d3ee"
+      stroke-width="3"
+      filter="url(#spark-bloom)"
+    />
+    <circle r="10" fill="#fef9c3"/>
+    <circle r="5" fill="#ffffff"/>
+  </g>
+</svg>

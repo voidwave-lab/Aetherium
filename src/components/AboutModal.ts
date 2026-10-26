@@ -18,6 +18,7 @@
  */
 
 import { store } from '../state/store';
+import { renderMeridianEclipseEmblem } from './AppEmblem';
 
 type AboutTabId = 'all' | 'commons' | 'transparency' | 'opensource' | 'bibliography' | 'license';
 
@@ -58,8 +59,8 @@ export class AboutModal {
 
         <!-- Modal Header -->
         <div class="relative px-6 py-4 border-b border-slate-800/85 flex items-center justify-between gap-4 bg-slate-950/50">
-          <div class="flex items-center gap-3">
-            <span class="w-2.5 h-2.5 rounded-full bg-indigo-400 shadow-[0_0_10px_rgba(129,140,248,0.85)]"></span>
+          <div class="flex items-center gap-3.5">
+            ${renderMeridianEclipseEmblem('w-9 h-9 rounded-xl shadow-[0_0_18px_rgba(34,211,238,0.3)]')}
             <div>
               <div class="flex items-center gap-2">
                 <h2 id="about-modal-title" class="text-sm md:text-base font-semibold tracking-wide text-slate-100">
