@@ -24,8 +24,9 @@ It is designed for two distinct user groups:
    - [Multi-Layer Procedural Web Audio & Psychoacoustic DSP Graph](#4-multi-layer-procedural-web-audio--psychoacoustic-dsp-graph)
    - [Serendipity Engine: Stochastic Melodic Sparks & Ephemeral Phenomena](#5-serendipity-engine-stochastic-melodic-sparks--ephemeral-phenomena)
    - [Clinical Suite DSP & Automated ISO-Principle Vector Interpolation](#6-clinical-suite-dsp--automated-iso-principle-vector-interpolation)
-   - [Procedural 2D Atmospheric Rendering Pipeline](#7-procedural-2d-atmospheric-rendering-pipeline)
-   - [Rust / Tauri v1 Native Backend & Binary Optimization](#8-rust--tauri-v1-native-backend--binary-optimization)
+   - [Studio-Quality Audio Recorder & Clinical "Take-Home" Export (`.wav` & `.webm`)](#7-studio-quality-audio-recorder--clinical-take-home-export-wav--webm)
+   - [Procedural 2D Atmospheric Rendering Pipeline](#8-procedural-2d-atmospheric-rendering-pipeline)
+   - [Rust / Tauri v1 Native Backend & Binary Optimization](#9-rust--tauri-v1-native-backend--binary-optimization)
 3. [Part III: For Developers (Building from Source)](#part-iii-for-developers-building-from-source)
 
 ---
@@ -81,6 +82,9 @@ Designed for pure, distraction-free tactile interaction:
    - **Nostalgia (*Pristine ↔ Worn*):** Adds gentle analog tape warmth, subtle pitch drift, distant rain/vinyl texture, and a soft sepia film grain.
    - **Rarity (*Present ↔ Silence*):** Controls how often a satellite crossing rests in silence instead of playing a note, giving the room space to breathe.
    - **Serendipity (*Stillness ↔ Sparks*):** Prevents auditory habituation by introducing gentle, unhurried musical surprises at irregular intervals (every 8 to 25 seconds)—such as a human-like *Rubato Arpeggio* accompanied by a shooting star across the outer canvas, a temporary *Modal Breeze* harmonic shift (`IV` or `VI`) with an expanding aurora ripple from the Core, or a distant *High-Octave Shimmer* in the upper mist. Set to `0% (Stillness)` for pure orbital predictability or raise toward `100% (Sparks)` for an evolving, living sky.
+   - **Capture Sanctuary (Live Session Audio Recorder):** Click **Capture Sanctuary** next to the Play/Mute button to record your live generative session. While recording, a soft breathing amber/crimson halo and `MM:SS` timer appear. Clicking **Stop Capture** opens the **Save Recorded Sanctuary Audio** modal, where you can export your session with an auto-generated poetic filename (e.g., `Aetherium_RainOnFelt_2026-10-26.wav`) as either:
+     - **Lossless Studio (`.wav`):** 16-bit Stereo PCM with an automatic 2-second cosine fade-in and 3-second cosine fade-out so the track loops seamlessly on mobile phones without clicks or pops.
+     - **Mobile Compact (`.webm`):** 256 kbps compact audio stream ideal for lightweight mobile storage or sharing.
    - **Fade to Silence (Sleep Timer):** Click `15m`, `30m`, or `60m` next to the crescent moon icon to have Aetherium gently fade out and stop automatically.
 
 ---
@@ -111,6 +115,10 @@ Switching to **Practitioner / Guide** mode reveals the collapsible **Practitione
    - **Binaural Theta (`100Hz L / 106Hz R`):** For headphone sessions, toggling **6Hz ON** sends $100\text{ Hz}$ to the left ear and $106\text{ Hz}$ to the right ear, generating a gentle $6\text{ Hz}$ Theta binaural beat organically masked beneath the music.
    - **Session Presets:** Save custom clinical configurations to quick one-click slots or export/import `.aether.json` files to share across clinic computers.
 
+5. **Patient Take-Home Anchor (Timed Audio Prescription)**
+   - *The Clinical Use Case:* Patients frequently benefit from taking home the exact regulated acoustic environment co-created during their therapy session to practice grounding between appointments.
+   - *How It Works:* Under **5. Patient Take-Home Anchor**, click **`Capture 3 Min Loop`**, **`Capture 5 Min Anchor`**, or **`Capture 10 Min Rest`**. Aetherium automatically records the active therapeutic state (including Vocal-Range Carving, Bilateral EMDR panning, or Somatic Sub-Bass if enabled), displays a calm progress bar (with an option to **Finish & Export Now** early), applies a 2-second cosine fade-in and 3-second cosine fade-out for click-free looping, and automatically prompts to save as **Lossless Studio (`.wav`)** or **Mobile Compact (`.webm` · WhatsApp/Email friendly)** when the timer completes.
+
 ---
 
 # Part II: Technical Architecture, DSP Signal Flow & Mathematical Models
@@ -138,14 +146,15 @@ flowchart TD
         SC["SanctuaryCanvas.ts (Keplerian Physics + Meridian Ripples + EMDR Glow)"]
     end
 
-    subgraph AUDIO["Procedural Web Audio & Psychoacoustic DSP"]
+    subgraph AUDIO["Procedural Web Audio, DSP & Dual-Format Recorder"]
         HE["HarmonicEngine.ts (Tonal Modal Quantizer)"]
         SE["SerendipityEngine.ts (Stochastic Melodic Sparks)"]
         AE["AudioEngine.ts (Tone.js Multi-Layer Synth & Clinical Bus)"]
+        AR["AudioRecorder.ts (16-bit WAV Encoder & 256kbps WebM Recorder)"]
     end
 
     subgraph NATIVE["Tauri v1 Native Rust Core (src-tauri)"]
-        RS["main.rs (Scoped FS Persistence & Serde Validation)"]
+        RS["main.rs (Scoped FS Persistence, Binary Export & Serde Validation)"]
     end
 
     UI -->|Dispatches Actions| ST
@@ -159,6 +168,8 @@ flowchart TD
     HE -->|Extended Voicings, IV/VI Roots & Dyads| SE
     HE -->|Drone Voicings & Sub-Roots| AE
     AE -->|0.05-0.15Hz Breath & EMDR Phase| SC
+    AE -->|Post-Limiter Stereo Tap| AR
+    AR <-->|Dialog Save & writeBinaryFile| RS
     UI <-->|Tauri IPC invoke| RS
 ```
 
@@ -342,7 +353,25 @@ Simultaneously, `SanctuaryCanvas.renderBilateralVisualGrounding` queries `audioE
 
 ---
 
-## 7. Procedural 2D Atmospheric Rendering Pipeline
+## 7. Studio-Quality Audio Recorder & Clinical "Take-Home" Export (`.wav` & `.webm`)
+
+Implemented in [`src/audio/AudioRecorder.ts`](./src/audio/AudioRecorder.ts) and tapped directly downstream of `masterLimiter` in [`src/audio/AudioEngine.ts`](./src/audio/AudioEngine.ts), Aetherium provides a dual-format recording and export pipeline with zero external dependencies:
+
+1. **Format A — Lossless 16-bit Stereo PCM `.wav` Encoder (`encodeWAV`):**
+   - Captures stereo `Float32Array` PCM frames from the master bus (`48,000 Hz` / `44,100 Hz` native `AudioContext` sample rate).
+   - **Seamless Mobile Loop Cosine Fades (`applySeamlessCosineFades`):** Before encoding, Aetherium automatically applies a **2-second raised-cosine fade-in** at the start of the buffer and a **3-second raised-cosine fade-out** at the end:
+     $$g_{\text{in}}(n) = \frac{1 - \cos(\pi n / N_{\text{in}})}{2}, \quad g_{\text{out}}(m) = \frac{1 + \cos(\pi m / N_{\text{out}})}{2}$$
+     where $N_{\text{in}} = 2 f_s$ and $N_{\text{out}} = 3 f_s$. This guarantees that exported `.wav` anchors loop infinitely on mobile phones without boundary clicks or phase pops.
+   - **44-Byte RIFF/WAVE Header Generator:** `encodeWAV(leftChannel, rightChannel, sampleRate)` writes a standard 44-byte RIFF/WAVE header (`fmt ` chunk size `16`, AudioFormat `1`, `2` stereo channels, `16` bits/sample) followed by clamped, interleaved little-endian `int16` stereo samples in a `Uint8Array`.
+2. **Format B — Compact Mobile Audio (`.webm` / `.ogg` at `256,000 bps`):**
+   - Routes the post-limiter stereo tap through a dedicated fade-envelope gain node into a `MediaStreamAudioDestinationNode` recorded by `MediaRecorder` at `audioBitsPerSecond: 256000` (`256 kbps`), producing compact files ideal for sharing with therapy patients via WhatsApp or Email.
+3. **Native Tauri Save Dialog & Browser Fallback:**
+   - Generates poetic filenames via `buildPoeticAudioFilename` (e.g., `Aetherium_RainOnFelt_2026-10-26.wav` or `Aetherium_RainOnFelt_5MinAnchor_2026-10-26.wav`).
+   - In the native Tauri desktop app, invokes `@tauri-apps/api/dialog` `save` and writes binary bytes via `@tauri-apps/api/fs` `writeBinaryFile` (scoped to `$AUDIO/*`, `$DESKTOP/*`, `$DOWNLOAD/*`, `$DOCUMENT/*`, with a Rust `save_audio_binary_file` fallback). When running in browser development mode (`npm run dev`), gracefully falls back to an `<a download>` `Blob` download.
+
+---
+
+## 8. Procedural 2D Atmospheric Rendering Pipeline
 
 To keep the native binary compact and GPU-friendly across integrated graphics, `SanctuaryCanvas.ts` implements custom atmospheric effects in hardware-accelerated HTML5 2D Canvas:
 - **Luminance Palette Morphing:** Primary and accent HSL hues interpolate continuously from deep slate-indigo ($234^\circ$) through cyan ($193^\circ$) to warm solar amber ($42^\circ$).
@@ -352,10 +381,10 @@ To keep the native binary compact and GPU-friendly across integrated graphics, `
 
 ---
 
-## 8. Rust / Tauri v1 Native Backend & Binary Optimization
+## 9. Rust / Tauri v1 Native Backend & Binary Optimization
 
 Implemented in [`src-tauri/src/main.rs`](./src-tauri/src/main.rs) and [`src-tauri/Cargo.toml`](./src-tauri/Cargo.toml):
-- **Schema-Validated Persistence:** The `save_constellation_json` and `load_constellation_json` Tauri commands validate every preset file against `ConstellationFilePayload` via `serde` and `serde_json` before reading or writing to the OS AppData directory (`$APPDATA/constellations/*.aether.json`) or user-selected file paths.
+- **Schema-Validated Persistence & Binary Audio Export:** The `save_constellation_json` and `load_constellation_json` Tauri commands validate every preset file against `ConstellationFilePayload` via `serde` and `serde_json` before reading or writing to the OS AppData directory (`$APPDATA/constellations/*.aether.json`) or user-selected file paths, while `save_audio_binary_file` and Tauri's scoped `writeBinaryFile` handle studio `.wav` and `.webm` exports.
 - **Minimal Binary Footprint:** The Rust `[profile.release]` configuration enables Link-Time Optimization (`lto = true`), single codegen unit (`codegen-units = 1`), size optimization (`opt-level = "z"`), symbol stripping (`strip = true`), and `panic = "abort"`, producing a tiny native executable without bundling Chromium.
 
 ---
@@ -403,26 +432,28 @@ npm run dev
 ```text
 Aetherium/
 ├── .github/workflows/release.yml   # Cross-platform CI/CD matrix (macOS, Linux, Windows)
+├── LICENSE                         # GNU General Public License v3.0 (GPL-3.0-or-later)
 ├── README.md                       # Documentation (English)
 ├── README.ro.md                    # Documentation (Romanian / Română)
 ├── src-tauri/                      # Rust Tauri v1 backend & native OS window/filesystem config
 │   ├── Cargo.toml                  # Size-optimized Rust release profile (opt-level = "z", LTO)
 │   ├── tauri.conf.json             # 1280x800 dark sanctuary window & scoped FS/Dialog allowlist
-│   └── src/main.rs                 # Native JSON constellation save/load commands
+│   └── src/main.rs                 # Native JSON constellation & binary audio save/load commands
 └── src/
     ├── main.ts                     # Application bootstrap
-    ├── state/store.ts              # Reactive store & ISO-Principle vector interpolation engine
+    ├── state/store.ts              # Reactive store, recording state & ISO-Principle vector engine
     ├── audio/
     │   ├── HarmonicEngine.ts       # Luminance modal quantization, IV/VI shifts & register mapping
     │   ├── SerendipityEngine.ts    # Stochastic rubato arpeggios, modal breezes & ghost shimmers
+    │   ├── AudioRecorder.ts        # 16-bit PCM WAV encoder (2s/3s cosine fades) & 256kbps WebM recorder
     │   └── AudioEngine.ts          # Multi-layer procedural Tone.js synth + clinical DSP bus
     ├── canvas/
     │   └── SanctuaryCanvas.ts      # 60fps Keplerian physics, Meridian, comets, auroras & EMDR glow
     └── components/
         ├── OnboardingModal.ts      # "Select Your Space" initial launch modal
         ├── TopBar.ts               # Mode switcher pill, telemetry & JSON export/import
-        ├── PoeticDock.ts           # 8 Seed presets, 6 Poetic sliders (incl. Serendipity) & Sleep Timer
-        └── PractitionerDock.ts     # Collapsible lateral clinical suite (Dialogue EQ, ISO Arc, EMDR)
+        ├── PoeticDock.ts           # 8 Seed presets, 6 Poetic sliders, Live Capture & Export Modal
+        └── PractitionerDock.ts     # Collapsible clinical suite (Dialogue EQ, ISO Arc, EMDR, Take-Home Anchor)
 ```
 
 ---

@@ -24,8 +24,9 @@ Aplicația este concepută pentru două categorii distincte de utilizatori:
    - [Graful DSP Web Audio Procedural Multi-Strat și Psihoacustic](#4-graful-dsp-web-audio-procedural-multi-strat-și-psihoacustic)
    - [Motorul Serendipity: Scântei Melodice Stocastice și Fenomene Efemere](#5-motorul-serendipity-scântei-melodice-stocastice-și-fenomene-efemere)
    - [Procesarea DSP a Suitei Clinice și Interpolarea Vectorială a Principiului ISO](#6-procesarea-dsp-a-suitei-clinice-și-interpolarea-vectorială-a-principiului-iso)
-   - [Pipeline-ul Procedural de Randare Atmosferică 2D](#7-pipeline-ul-procedural-de-randare-atmosferică-2d)
-   - [Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor](#8-backend-ul-nativ-rust--tauri-v1-și-optimizarea-binarelor)
+   - [Înregistrator Audio de Calitate Studio și Export Clinic „Take-Home" (`.wav` & `.webm`)](#7-înregistrator-audio-de-calitate-studio-și-export-clinic-take-home-wav--webm)
+   - [Pipeline-ul Procedural de Randare Atmosferică 2D](#8-pipeline-ul-procedural-de-randare-atmosferică-2d)
+   - [Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor](#9-backend-ul-nativ-rust--tauri-v1-și-optimizarea-binarelor)
 3. [Partea III: Pentru Dezvoltatori (Compilarea din Codul Sursă)](#partea-iii-pentru-dezvoltatori-compilarea-din-codul-sursă)
 
 ---
@@ -81,6 +82,9 @@ Conceput pentru o interacțiune tactilă pură, fără distrageri tehnice:
    - **Nostalgia (*Pristine ↔ Worn / Pur ↔ Patinat*):** Adaugă căldura benzii magnetice analogice, o ușoară fluctuație a înălțimii sunetului (*wow & flutter*), o textură discretă de ploaie/vinil și o granulație vizuală de film sepia.
    - **Rarity (*Present ↔ Silence / Prezență ↔ Liniște*):** Controlează probabilitatea ca o traversare a Meridianului să rămână în tăcere în loc să redea o notă, oferind muzicii spațiu de respirație.
    - **Serendipity (*Stillness ↔ Sparks / Nemiscare ↔ Scântei*):** Previne obișnuința auditivă (*habituation*) prin apariția unor micro-evenimente muzicale și vizuale blânde la intervale neregulate (la fiecare 8–25 secunde)—precum un *Arpegiu Rubato* însoțit de o cometă luminoasă pe cerul exterior, o *Briză Modală* ce transpune temporar fundamentala pe subdominantă (`IV`) sau submediantă (`VI`) odată cu o undă de auroră dinspre Nucleu, ori un *Ecou Cristalin* în Octava 5. Setați la `0% (Stillness)` pentru predictibilitate pură sau creșteți spre `100% (Sparks)` pentru un sanctuar viu, în continuă evoluție.
+   - **Capture Sanctuary (Înregistrare Live a Sesiunii):** Apăsați butonul **Capture Sanctuary** de lângă butonul Play/Mute pentru a înregistra în timp real peisajul sonor generativ. În timpul înregistrării, butonul este înconjurat de un halou pulsatoriu chihlimbar/rubiniu și afișează cronometrul `MM:SS`. La apăsarea **Stop Capture**, se deschide fereastra **Save Recorded Sanctuary Audio**, de unde puteți salva sesiunea cu un nume de fișier poetic generat automat (de ex. `Aetherium_RainOnFelt_2026-10-26.wav`) în două formate:
+     - **Lossless Studio (`.wav`):** Audio PCM stereo pe 16 biți fără pierderi, cu fade-in cosinusoidal automat de 2 secunde și fade-out cosinusoidal de 3 secunde, astfel încât fișierul să poată rula în buclă continuă pe telefon fără clicuri.
+     - **Mobile Compact (`.webm`):** Flux audio comprimat la `256 kbps`, ideal pentru stocare mobilă eficientă sau partajare rapidă.
    - **Fade to Silence (Temporizator de Somn):** Selectați `15m`, `30m` sau `60m` lângă pictograma semilunii pentru ca Aetherium să reducă treptat volumul până la liniște deplină.
 
 ---
@@ -111,6 +115,10 @@ Comutarea în modul **Practitioner / Guide** dezvăluie panoul lateral pliabil *
    - **Binaural Theta (`100Hz L / 106Hz R`):** Pentru ședințele cu căști, activarea **6Hz ON** trimite $100\text{ Hz}$ în urechea stângă și $106\text{ Hz}$ în urechea dreaptă, generând o bătaie binaurală Theta de $6\text{ Hz}$ mascată organic sub peisajul sonor.
    - **Preseturi de Ședință:** Salvați configurațiile clinice în sloturi locale rapide sau exportați/importați fișiere `.aether.json`.
 
+5. **Patient Take-Home Anchor (Ancoră Audio Terapeutică „Take-Home")**
+   - *Utilitate Clinică:* Pacienții beneficiază adesea de posibilitatea de a asculta acasă exact ambianța sonoră co-creată și reglată în timpul ședinței de terapie, ca ancoră de autoreglare între programări.
+   - *Cum Funcționează:* În secțiunea **5. Patient Take-Home Anchor**, apăsați **`Capture 3 Min Loop`**, **`Capture 5 Min Anchor`** sau **`Capture 10 Min Rest`**. Aetherium pornește automat o înregistrare temporizată a stării terapeutice active (incluzând Vocal-Range Carving, panoramarea bilaterală EMDR sau sub-basul somatic, dacă sunt activate), afișează o bară calmă de progres (cu opțiunea de finalizare anticipată **Finish & Export Now**), aplică automat fade-in cosinusoidal de 2 secunde și fade-out de 3 secunde și deschide dialogul de salvare în format **Lossless Studio (`.wav`)** sau **Mobile Compact (`.webm` · ușor de trimis pe WhatsApp/Email)** la finalizarea temporizatorului.
+
 ---
 
 # Partea II: Arhitectură Tehnică, Fluxul Semnalului DSP și Modele Matematice
@@ -138,14 +146,15 @@ flowchart TD
         SC["SanctuaryCanvas.ts (Fizică Kepleriană + Unde Meridian + Luminiscență EMDR)"]
     end
 
-    subgraph AUDIO["Motorul DSP Web Audio Procedural și Psihoacustic"]
+    subgraph AUDIO["Motorul DSP Web Audio, Psihoacustic și Înregistrator Dual"]
         HE["HarmonicEngine.ts (Cuantizator Modal Tonal)"]
         SE["SerendipityEngine.ts (Scântei Melodice Stocastice)"]
         AE["AudioEngine.ts (Sintetizator Tone.js Multi-Strat & Magistrală Clinică)"]
+        AR["AudioRecorder.ts (Encoder WAV 16-biți & Recorder WebM 256kbps)"]
     end
 
     subgraph NATIVE["Nucleul Nativ Rust Tauri v1 (src-tauri)"]
-        RS["main.rs (Persistență FS Securizată & Validare Serde)"]
+        RS["main.rs (Persistență FS Securizată, Export Binar & Validare Serde)"]
     end
 
     UI -->|Declanșează Acțiuni| ST
@@ -159,6 +168,8 @@ flowchart TD
     HE -->|Extensii Armonice, Trepte IV/VI & Diade| SE
     HE -->|Voicing Dronă & Sub-Fundamentale| AE
     AE -->|LFO Respirație 0.05-0.15Hz & Fază EMDR| SC
+    AE -->|Captură Stereo Post-Limitator| AR
+    AR <-->|Dialog Save & writeBinaryFile| RS
     UI <-->|Tauri IPC invoke| RS
 ```
 
@@ -342,7 +353,25 @@ Simultan, `SanctuaryCanvas.renderBilateralVisualGrounding` interoghează `audioE
 
 ---
 
-## 7. Pipeline-ul Procedural de Randare Atmosferică 2D
+## 7. Înregistrator Audio de Calitate Studio și Export Clinic „Take-Home" (`.wav` & `.webm`)
+
+Implementat în [`src/audio/AudioRecorder.ts`](./src/audio/AudioRecorder.ts) și conectat direct după nodul `masterLimiter` în [`src/audio/AudioEngine.ts`](./src/audio/AudioEngine.ts), Aetherium oferă un sistem dual de captură și export audio fără dependențe externe:
+
+1. **Formatul A — Encoder `.wav` PCM Stereo pe 16 Biți Fără Pierderi (`encodeWAV`):**
+   - Colectează eșantioane stereo `Float32Array` direct din magistrala master (la rata nativă `48.000 Hz` / `44.100 Hz` a `AudioContext`).
+   - **Fade-In și Fade-Out Cosinusoidal Automat pentru Buclă Mobilă (`applySeamlessCosineFades`):** Înainte de codarea binară, aplicația aplică automat un **fade-in cosinusoidal de 2 secunde** la începutul înregistrării și un **fade-out cosinusoidal de 3 secunde** la final:
+     $$g_{\text{in}}(n) = \frac{1 - \cos(\pi n / N_{\text{in}})}{2}, \quad g_{\text{out}}(m) = \frac{1 + \cos(\pi m / N_{\text{out}})}{2}$$
+     unde $N_{\text{in}} = 2 f_s$ și $N_{\text{out}} = 3 f_s$. Acest profil garantează că fișierele exportate rulează în buclă continuă pe telefon fără clicuri sau discontinuități de fază.
+   - **Generator de Antet RIFF/WAVE de 44 de Octeți:** `encodeWAV(leftChannel, rightChannel, sampleRate)` construiește antetul standard RIFF/WAVE de 44 de octeți (`fmt ` de `16` octeți, AudioFormat `1` PCM liniar, `2` canale stereo, `16` biți/eșantion) urmat de eșantioanele stereo intercalate `int16` little-endian într-un `Uint8Array`.
+2. **Formatul B — Audio Mobil Compact (`.webm` / `.ogg` la `256.000 bps`):**
+   - Direcționează semnalul master printr-un nod `MediaStreamAudioDestinationNode` înregistrat cu `MediaRecorder` la o rată de biți de `256000 bps` (`256 kbps`), generând fișiere compacte ușor de transmis pacienților prin WhatsApp sau Email.
+3. **Dialog Nativ Tauri și Fallback pentru Browser:**
+   - Generează automat nume de fișiere poetice prin `buildPoeticAudioFilename` (de ex. `Aetherium_RainOnFelt_2026-10-26.wav` sau `Aetherium_RainOnFelt_5MinAnchor_2026-10-26.wav`).
+   - În aplicația nativă Tauri, apelează dialogul nativ `save` din `@tauri-apps/api/dialog` și scrie fișierul binar prin `writeBinaryFile` din `@tauri-apps/api/fs` (cu permisiuni pentru `$AUDIO/*`, `$DESKTOP/*`, `$DOWNLOAD/*`, `$DOCUMENT/*` și comanda Rust `save_audio_binary_file` ca rezervă). În modul de dezvoltare în browser (`npm run dev`), folosește descărcarea nativă `<a download>` `Blob`.
+
+---
+
+## 8. Pipeline-ul Procedural de Randare Atmosferică 2D
 
 Pentru a menține executabilul nativ compact și eficient pe plăci grafice integrate, `SanctuaryCanvas.ts` implementează efecte atmosferice procedurale în HTML5 2D Canvas accelerat hardware:
 - **Morfingul Paletei Cromatice prin Luminance:** Nuanțele HSL primare și de accent sunt interpolate continuu de la indigo-ardezie profund ($234^\circ$), trecând prin cyan ($193^\circ$), până la chihlimbar solar cald ($42^\circ$).
@@ -352,10 +381,10 @@ Pentru a menține executabilul nativ compact și eficient pe plăci grafice inte
 
 ---
 
-## 8. Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor
+## 9. Backend-ul Nativ Rust / Tauri v1 și Optimizarea Binarelor
 
 Implementat în [`src-tauri/src/main.rs`](./src-tauri/src/main.rs) și [`src-tauri/Cargo.toml`](./src-tauri/Cargo.toml):
-- **Persistență Validată prin Schemă:** Comenzile native Tauri `save_constellation_json` și `load_constellation_json` validează fiecare fișier de preset în raport cu structura `ConstellationFilePayload` prin `serde` și `serde_json` înainte de scrierea sau citirea din directorul AppData al sistemului de operare (`$APPDATA/constellations/*.aether.json`).
+- **Persistență Validată prin Schemă și Export Audio Binar:** Comenzile native Tauri `save_constellation_json` și `load_constellation_json` validează fiecare fișier de preset în raport cu structura `ConstellationFilePayload` prin `serde` și `serde_json` înainte de scrierea sau citirea din directorul AppData al sistemului de operare (`$APPDATA/constellations/*.aether.json`), iar `save_audio_binary_file` și `writeBinaryFile` gestionează salvarea fișierelor `.wav` și `.webm`.
 - **Amprentă Binară Minimă:** Profilul Rust `[profile.release]` activează optimizarea la nivel de linkare (`lto = true`), o singură unitate de generare de cod (`codegen-units = 1`), optimizarea dimensiunii (`opt-level = "z"`), eliminarea simbolurilor de depanare (`strip = true`) și `panic = "abort"`, rezultând un executabil nativ de câțiva megabyți care utilizează WebView-ul nativ al sistemului de operare.
 
 ---
@@ -403,26 +432,28 @@ npm run dev
 ```text
 Aetherium/
 ├── .github/workflows/release.yml   # Matrice CI/CD multi-platformă (macOS, Linux, Windows)
+├── LICENSE                         # Licența Publică Generală GNU v3.0 (GPL-3.0-or-later)
 ├── README.md                       # Documentație (Engleză / English)
 ├── README.ro.md                    # Documentație (Română)
 ├── src-tauri/                      # Backend Rust Tauri v1 & configurație nativă fereastră/FS
 │   ├── Cargo.toml                  # Profil Rust optimizat pentru dimensiune minimă (opt-level = "z", LTO)
 │   ├── tauri.conf.json             # Fereastră 1280x800 & permisiuni securizate FS/Dialog
-│   └── src/main.rs                 # Comenzi native pentru salvarea/încărcarea constelațiilor JSON
+│   └── src/main.rs                 # Comenzi native pentru constelații JSON și export audio binar
 └── src/
     ├── main.ts                     # Punctul de intrare al aplicației
-    ├── state/store.ts              # Store reactiv & motorul de interpolare vectorială a Principiului ISO
+    ├── state/store.ts              # Store reactiv, stare înregistrare & motorul Principiului ISO
     ├── audio/
     │   ├── HarmonicEngine.ts       # Cuantizare modală Luminance, transpuneri IV/VI & registre orbitale
     │   ├── SerendipityEngine.ts    # Arpegii rubato stocastice, brize modale & ecouri cristaline
+    │   ├── AudioRecorder.ts        # Encoder WAV 16-biți (fade cosinusoidal 2s/3s) & Recorder WebM 256kbps
     │   └── AudioEngine.ts          # Sintetizator Tone.js multi-strat + magistrala DSP clinică
     ├── canvas/
     │   └── SanctuaryCanvas.ts      # Fizică kepleriană la 60fps, Meridian, comete, aurore & EMDR
     └── components/
         ├── OnboardingModal.ts      # Fereastra modală de selecție a spațiului la lansare
         ├── TopBar.ts               # Comutator de mod, telemetrie & export/import JSON
-        ├── PoeticDock.ts           # 8 Seeds, 6 glisoare Macro (inclusiv Serendipity) & Temporizator Somn
-        └── PractitionerDock.ts     # Suita clinică laterală pliabilă (Dialogue EQ, Arc ISO, EMDR)
+        ├── PoeticDock.ts           # 8 Seeds, 6 glisoare Macro, Capture Sanctuary & Modal Export
+        └── PractitionerDock.ts     # Suita clinică laterală (Dialogue EQ, Arc ISO, EMDR, Take-Home Anchor)
 ```
 
 ---

@@ -265,6 +265,26 @@ export interface SavedPresetRecord {
   payloadJson: string;
 }
 
+export type RecordingSource = 'live-explorer' | 'clinical-anchor';
+
+export type ClinicalAnchorDurationMinutes = 3 | 5 | 10;
+
+export interface RecordingState {
+  isRecording: boolean;
+  source: RecordingSource | null;
+  elapsedSec: number;
+  /** Target duration in seconds when started via Practitioner "Patient Take-Home Anchor" (180, 300, or 600), or null for open-ended live capture */
+  targetDurationSec: number | null;
+  /** Label of the active clinical anchor preset (e.g., "3 Min Loop", "5 Min Anchor", "10 Min Rest") */
+  anchorLabel: string | null;
+  /** Whether a completed recording buffer is ready to be exported via the Save Modal / Dialog */
+  hasPendingExport: boolean;
+  lastRecordedDurationSec: number;
+  lastRecordedSeedId: SeedId | null;
+  lastRecordedSource: RecordingSource | null;
+  lastRecordedSampleRate: number;
+}
+
 export interface AetheriumState {
   mode: OperatingMode;
   hasCompletedOnboarding: boolean;
@@ -282,6 +302,7 @@ export interface AetheriumState {
   sleepTimerMinutes: SleepTimerDuration;
   sleepTimerRemainingSec: number | null;
   practitioner: PractitionerConfig;
+  recording: RecordingState;
   savedPresets: SavedPresetRecord[];
   lastTriggerEvent: SatelliteTriggerPayload | null;
   lastSerendipityEvent: SerendipityEventPayload | null;
@@ -664,6 +685,18 @@ class AetheriumStore {
         emdrStereoWidth: 0.85,
         somaticSubBassLevel: 0.35,
         binauralThetaEnabled: false,
+      },
+      recording: {
+        isRecording: false,
+        source: null,
+        elapsedSec: 0,
+        targetDurationSec: null,
+        anchorLabel: null,
+        hasPendingExport: false,
+        lastRecordedDurationSec: 0,
+        lastRecordedSeedId: null,
+        lastRecordedSource: null,
+        lastRecordedSampleRate: 48000,
       },
       savedPresets,
       lastTriggerEvent: null,
@@ -1148,6 +1181,17 @@ class AetheriumStore {
     this.state = {
       ...this.state,
       savedPresets: nextList,
+    };
+    this.emit();
+  }
+
+  public updateRecordingState(partial: Partial<RecordingState>): void {
+    this.state = {
+      ...this.state,
+      recording: {
+        ...this.state.recording,
+        ...partial,
+      },
     };
     this.emit();
   }

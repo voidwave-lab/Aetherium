@@ -49,7 +49,7 @@ function bootstrapAetherium(): void {
   const audioEngine = new AudioEngine();
   const canvas = new SanctuaryCanvas(appContainer, audioEngine);
   new TopBar(appContainer);
-  const practitionerDock = new PractitionerDock(appContainer);
+  const practitionerDock = new PractitionerDock(appContainer, audioEngine);
   new PoeticDock(appContainer, audioEngine);
   new OnboardingModal(appContainer, audioEngine);
 

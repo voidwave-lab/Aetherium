@@ -17,8 +17,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+import { AudioEngine } from '../audio/AudioEngine';
 import {
   AetheriumState,
+  ClinicalAnchorDurationMinutes,
   evaluateIsoSessionArc,
   ISO_START_STATES,
   ISO_TARGET_STATES,
@@ -37,8 +39,10 @@ const ISO_DURATIONS: IsoDurationMinutes[] = [20, 45, 50, 60];
 export class PractitionerDock {
   private root: HTMLElement;
   private fileInput: HTMLInputElement;
+  private audioEngine: AudioEngine;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, audioEngine: AudioEngine) {
+    this.audioEngine = audioEngine;
     this.root = document.createElement('aside');
     this.root.id = 'practitioner-clinical-dock';
     this.root.setAttribute('aria-label', 'Clinical Practitioner Suite');
@@ -472,6 +476,91 @@ export class PractitionerDock {
               <div id="saved-presets-list" class="space-y-1 max-h-28 overflow-y-auto"></div>
             </div>
           </section>
+
+          <!-- =================================================================== -->
+          <!-- MODULE 5: PATIENT TAKE-HOME ANCHOR (TIMED AUDIO PRESCRIPTION)       -->
+          <!-- =================================================================== -->
+          <section class="rounded-xl p-3 bg-slate-900/60 border border-amber-400/25 space-y-2.5">
+            <div class="flex items-center justify-between gap-2">
+              <div>
+                <h3 class="font-medium text-slate-100 flex items-center gap-1.5">
+                  <span>5. Patient Take-Home Anchor</span>
+                </h3>
+                <p class="text-[10px] text-slate-400 mt-0.5">
+                  Captures the active therapeutic state (with 2s fade-in &amp; 3s fade-out) for patient mobile listening.
+                </p>
+              </div>
+              <span
+                id="clinical-anchor-status-pill"
+                class="text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-950/75 text-slate-400 border border-slate-800 shrink-0"
+              >
+                Ready
+              </span>
+            </div>
+
+            <!-- Quick-Duration Capture Buttons -->
+            <div class="grid grid-cols-3 gap-1.5">
+              <button
+                type="button"
+                data-anchor-mins="3"
+                data-anchor-label="3 Min Loop"
+                class="py-1.5 px-2 rounded-lg text-[10px] font-mono text-center bg-slate-950/75 hover:bg-amber-500/20 text-slate-200 hover:text-amber-100 border border-slate-800 hover:border-amber-400/40 transition-all"
+              >
+                Capture 3 Min Loop
+              </button>
+              <button
+                type="button"
+                data-anchor-mins="5"
+                data-anchor-label="5 Min Anchor"
+                class="py-1.5 px-2 rounded-lg text-[10px] font-mono text-center bg-slate-950/75 hover:bg-amber-500/20 text-slate-200 hover:text-amber-100 border border-slate-800 hover:border-amber-400/40 transition-all"
+              >
+                Capture 5 Min Anchor
+              </button>
+              <button
+                type="button"
+                data-anchor-mins="10"
+                data-anchor-label="10 Min Rest"
+                class="py-1.5 px-2 rounded-lg text-[10px] font-mono text-center bg-slate-950/75 hover:bg-amber-500/20 text-slate-200 hover:text-amber-100 border border-slate-800 hover:border-amber-400/40 transition-all"
+              >
+                Capture 10 Min Rest
+              </button>
+            </div>
+
+            <!-- Calm Progress Bar & Active Timed Capture Telemetry -->
+            <div id="clinical-anchor-progress-container" class="hidden space-y-2 pt-1">
+              <div class="flex items-center justify-between text-[10px] font-mono">
+                <span id="clinical-anchor-active-label" class="text-amber-200">
+                  Capturing 5 Min Anchor...
+                </span>
+                <span id="clinical-anchor-time-readout" class="text-amber-300">
+                  00:00 / 05:00
+                </span>
+              </div>
+              <div class="w-full h-2 rounded-full bg-slate-950/80 border border-slate-800 overflow-hidden">
+                <div
+                  id="clinical-anchor-progress-bar"
+                  class="h-full bg-gradient-to-r from-amber-400/80 via-rose-400/80 to-cyan-400/80 transition-all duration-300"
+                  style="width: 0%"
+                ></div>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  id="btn-clinical-anchor-finish-now"
+                  class="flex-1 py-1 px-2 rounded-lg text-[10px] font-mono bg-amber-500/20 hover:bg-amber-500/30 text-amber-100 border border-amber-400/40 transition-colors"
+                >
+                  Finish &amp; Export Now
+                </button>
+                <button
+                  type="button"
+                  id="btn-clinical-anchor-cancel"
+                  class="py-1 px-2.5 rounded-lg text-[10px] font-mono bg-slate-950/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-800 transition-colors"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </section>
         </div>
       </div>
     `;
@@ -618,6 +707,26 @@ export class PractitionerDock {
       const text = await file.text();
       store.loadConstellationFromJson(text);
       this.fileInput.value = '';
+    });
+
+    // 5. Patient Take-Home Anchor Timed Capture Controls
+    const anchorBtns = this.root.querySelectorAll<HTMLButtonElement>('[data-anchor-mins]');
+    anchorBtns.forEach((btn) => {
+      btn.addEventListener('click', () => {
+        const mins = Number(btn.getAttribute('data-anchor-mins')) as ClinicalAnchorDurationMinutes;
+        const label = btn.getAttribute('data-anchor-label') ?? `${mins} Min Anchor`;
+        void this.audioEngine.startClinicalAnchorCapture(mins, label);
+      });
+    });
+
+    const finishAnchorNowBtn = this.root.querySelector('#btn-clinical-anchor-finish-now');
+    finishAnchorNowBtn?.addEventListener('click', () => {
+      void this.audioEngine.recorder.stopRecording();
+    });
+
+    const cancelAnchorBtn = this.root.querySelector('#btn-clinical-anchor-cancel');
+    cancelAnchorBtn?.addEventListener('click', () => {
+      this.audioEngine.recorder.cancelRecording();
     });
   }
 
@@ -980,6 +1089,58 @@ export class PractitionerDock {
               }
             });
           });
+      }
+    }
+
+    // 6. Sync Module 5: Patient Take-Home Anchor Progress & Status
+    const rec = state.recording;
+    const isAnchorRecording = rec.isRecording && rec.source === 'clinical-anchor';
+    const anchorStatusPill = this.root.querySelector('#clinical-anchor-status-pill');
+    const anchorProgressContainer = this.root.querySelector('#clinical-anchor-progress-container');
+    const anchorActiveLabel = this.root.querySelector('#clinical-anchor-active-label');
+    const anchorTimeReadout = this.root.querySelector('#clinical-anchor-time-readout');
+    const anchorProgressBar = this.root.querySelector<HTMLElement>('#clinical-anchor-progress-bar');
+
+    if (anchorStatusPill) {
+      if (isAnchorRecording) {
+        anchorStatusPill.textContent = 'Capturing';
+        anchorStatusPill.className =
+          'text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-200 border border-amber-400/45 shrink-0 animate-pulse';
+      } else {
+        anchorStatusPill.textContent = 'Ready';
+        anchorStatusPill.className =
+          'text-[9px] font-mono uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-950/75 text-slate-400 border border-slate-800 shrink-0';
+      }
+    }
+
+    const anchorBtns = this.root.querySelectorAll<HTMLButtonElement>('[data-anchor-mins]');
+    anchorBtns.forEach((btn) => {
+      const mins = Number(btn.getAttribute('data-anchor-mins'));
+      const isSelected =
+        isAnchorRecording && rec.targetDurationSec !== null && rec.targetDurationSec === mins * 60;
+      if (isSelected) {
+        btn.className =
+          'py-1.5 px-2 rounded-lg text-[10px] font-mono text-center bg-amber-500/25 text-amber-100 border border-amber-400/55 shadow-[0_0_12px_rgba(251,191,36,0.25)] transition-all';
+      } else {
+        btn.className =
+          'py-1.5 px-2 rounded-lg text-[10px] font-mono text-center bg-slate-950/75 hover:bg-amber-500/20 text-slate-200 hover:text-amber-100 border border-slate-800 hover:border-amber-400/40 transition-all';
+      }
+    });
+
+    if (
+      anchorProgressContainer &&
+      anchorActiveLabel &&
+      anchorTimeReadout &&
+      anchorProgressBar
+    ) {
+      if (isAnchorRecording && rec.targetDurationSec !== null) {
+        anchorProgressContainer.classList.remove('hidden');
+        anchorActiveLabel.textContent = `Capturing ${rec.anchorLabel ?? 'Anchor'}...`;
+        anchorTimeReadout.textContent = `${this.formatClock(rec.elapsedSec)} / ${this.formatClock(rec.targetDurationSec)}`;
+        const pct = Math.max(0, Math.min(100, (rec.elapsedSec / rec.targetDurationSec) * 100));
+        anchorProgressBar.style.width = `${pct.toFixed(1)}%`;
+      } else {
+        anchorProgressContainer.classList.add('hidden');
       }
     }
   }

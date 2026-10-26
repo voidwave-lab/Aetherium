@@ -18,6 +18,7 @@
  */
 
 import { AudioEngine } from '../audio/AudioEngine';
+import { buildPoeticAudioFilename } from '../audio/AudioRecorder';
 import {
   AetheriumState,
   MacroParams,
@@ -191,6 +192,21 @@ export class PoeticDock {
               ></span>
             </div>
 
+            <!-- Live Session Capture ("Capture Sanctuary") Button -->
+            <button
+              type="button"
+              id="btn-capture-sanctuary"
+              title="Capture Sanctuary Audio (16-bit Lossless WAV & 256kbps Compact WebM)"
+              class="flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 border"
+            >
+              <span id="capture-sanctuary-icon" class="flex items-center justify-center"></span>
+              <span id="capture-sanctuary-label">Capture Sanctuary</span>
+              <span
+                id="capture-sanctuary-timer"
+                class="hidden font-mono text-[11px] text-amber-200 pl-1 border-l border-rose-400/40"
+              >00:00</span>
+            </button>
+
             <!-- Master Play / Mute Button -->
             <button
               type="button"
@@ -206,6 +222,97 @@ export class PoeticDock {
         <!-- Bottom Row: 4 Macro Poetic Sliders + Rarity + Serendipity (Stillness <-> Sparks) -->
         <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 pt-0.5">
           ${slidersHtml}
+        </div>
+      </div>
+
+      <!-- Studio Audio Export Modal (Lossless 16-bit .wav or Compact 256kbps .webm) -->
+      <div
+        id="modal-export-audio"
+        class="hidden fixed inset-0 z-50 pointer-events-auto flex items-center justify-center bg-slate-950/75 backdrop-blur-md px-4"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-export-audio-title"
+      >
+        <div class="glass-panel max-w-md w-full rounded-2xl border border-amber-400/30 p-5 shadow-2xl space-y-4">
+          <div class="flex items-start justify-between gap-3">
+            <div>
+              <span
+                id="export-modal-badge"
+                class="inline-block text-[10px] font-mono uppercase tracking-[0.18em] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-300 border border-amber-400/30 mb-1.5"
+              >
+                Sanctuary Capture Ready
+              </span>
+              <h3 id="modal-export-audio-title" class="text-sm font-semibold text-slate-100">
+                Save Recorded Sanctuary Audio
+              </h3>
+              <p id="export-modal-subtitle" class="text-xs text-slate-400 mt-0.5">
+                Processed with a 2s cosine fade-in &amp; 3s cosine fade-out for seamless mobile looping.
+              </p>
+            </div>
+            <button
+              type="button"
+              id="btn-close-export-modal"
+              title="Close export dialog"
+              class="text-slate-400 hover:text-slate-200 px-2 py-1 text-sm font-mono"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2.5 text-[11px] font-mono bg-slate-950/70 border border-slate-800/80 rounded-xl p-3">
+            <div>
+              <span class="text-slate-500 block text-[9px] uppercase">Duration</span>
+              <span id="export-modal-duration" class="text-slate-200">00:00</span>
+            </div>
+            <div>
+              <span class="text-slate-500 block text-[9px] uppercase">Master Format</span>
+              <span id="export-modal-samplerate" class="text-emerald-300">48.0 kHz · 16-bit Stereo</span>
+            </div>
+          </div>
+
+          <div class="space-y-2.5">
+            <!-- Format A: Lossless Studio (.wav) -->
+            <button
+              type="button"
+              id="btn-save-format-wav"
+              class="w-full text-left rounded-xl p-3.5 bg-indigo-500/15 hover:bg-indigo-500/25 border border-indigo-400/40 transition-all flex items-center justify-between gap-3 group"
+            >
+              <div>
+                <div class="text-xs font-semibold text-indigo-100 flex items-center gap-2">
+                  <span>Lossless Studio (.wav)</span>
+                  <span id="export-size-wav" class="text-[10px] font-mono text-indigo-300/90"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-0.5">
+                  Pure 16-bit Stereo PCM · Seamless Loop Fades · Archival &amp; Studio Quality
+                </div>
+                <div id="export-filename-wav" class="text-[10px] font-mono text-indigo-300/80 mt-1 truncate"></div>
+              </div>
+              <span class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-indigo-500/30 text-indigo-100 border border-indigo-400/40 shrink-0 group-hover:bg-indigo-500/45">
+                Save .WAV
+              </span>
+            </button>
+
+            <!-- Format B: Mobile Compact (.webm) -->
+            <button
+              type="button"
+              id="btn-save-format-webm"
+              class="w-full text-left rounded-xl p-3.5 bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 transition-all flex items-center justify-between gap-3 group"
+            >
+              <div>
+                <div class="text-xs font-semibold text-emerald-100 flex items-center gap-2">
+                  <span>Mobile Compact (.webm)</span>
+                  <span id="export-size-webm" class="text-[10px] font-mono text-emerald-300/90"></span>
+                </div>
+                <div class="text-[11px] text-slate-300 mt-0.5">
+                  256 kbps Compact Stream · Lightweight Sharing (WhatsApp / Email Friendly)
+                </div>
+                <div id="export-filename-webm" class="text-[10px] font-mono text-emerald-300/80 mt-1 truncate"></div>
+              </div>
+              <span class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 shrink-0 group-hover:bg-emerald-500/45">
+                Save .WEBM
+              </span>
+            </button>
+          </div>
         </div>
       </div>
     `;
@@ -241,6 +348,26 @@ export class PoeticDock {
     const masterAudioBtn = this.root.querySelector('#btn-master-audio');
     masterAudioBtn?.addEventListener('click', () => {
       void this.audioEngine.togglePlayback();
+    });
+
+    const captureSanctuaryBtn = this.root.querySelector('#btn-capture-sanctuary');
+    captureSanctuaryBtn?.addEventListener('click', () => {
+      void this.audioEngine.toggleLiveCapture();
+    });
+
+    const closeExportModalBtn = this.root.querySelector('#btn-close-export-modal');
+    closeExportModalBtn?.addEventListener('click', () => {
+      store.updateRecordingState({ hasPendingExport: false });
+    });
+
+    const saveWavBtn = this.root.querySelector('#btn-save-format-wav');
+    saveWavBtn?.addEventListener('click', () => {
+      void this.audioEngine.recorder.saveCapturedAudio('wav');
+    });
+
+    const saveWebmBtn = this.root.querySelector('#btn-save-format-webm');
+    saveWebmBtn?.addEventListener('click', () => {
+      void this.audioEngine.recorder.saveCapturedAudio('webm');
     });
   }
 
@@ -338,6 +465,98 @@ export class PoeticDock {
           </svg>
         `;
         labelEl.textContent = 'Awaken Audio';
+      }
+    }
+
+    // Sync Live Session Capture ("Capture Sanctuary") Button & Elapsed Timer
+    const captureBtn = this.root.querySelector('#btn-capture-sanctuary');
+    const captureIconEl = this.root.querySelector('#capture-sanctuary-icon');
+    const captureLabelEl = this.root.querySelector('#capture-sanctuary-label');
+    const captureTimerEl = this.root.querySelector('#capture-sanctuary-timer');
+    const rec = state.recording;
+
+    if (captureBtn && captureIconEl && captureLabelEl && captureTimerEl) {
+      if (rec.isRecording) {
+        captureBtn.className =
+          'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 bg-rose-500/20 text-amber-100 border border-amber-400/60 shadow-[0_0_22px_rgba(244,63,94,0.45)]';
+        captureIconEl.innerHTML = `
+          <span class="relative flex h-2.5 w-2.5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-80"></span>
+            <span class="relative inline-flex rounded-sm h-2.5 w-2.5 bg-amber-400"></span>
+          </span>
+        `;
+        captureLabelEl.textContent =
+          rec.source === 'clinical-anchor' && rec.anchorLabel
+            ? `Stop (${rec.anchorLabel})`
+            : 'Stop Capture';
+        captureTimerEl.textContent =
+          rec.targetDurationSec !== null
+            ? `${this.formatRemainingTime(rec.elapsedSec)}/${this.formatRemainingTime(rec.targetDurationSec)}`
+            : this.formatRemainingTime(rec.elapsedSec);
+        captureTimerEl.classList.remove('hidden');
+      } else {
+        captureBtn.className =
+          'flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-300 bg-slate-900/75 hover:bg-rose-500/15 text-slate-200 hover:text-amber-100 border border-slate-700/80 hover:border-amber-400/45';
+        captureIconEl.innerHTML = `
+          <span class="inline-flex rounded-full h-2.5 w-2.5 bg-rose-400/90 shadow-[0_0_8px_rgba(244,63,94,0.7)]"></span>
+        `;
+        captureLabelEl.textContent = 'Capture Sanctuary';
+        captureTimerEl.classList.add('hidden');
+      }
+    }
+
+    // Sync Studio Audio Export Modal
+    const exportModal = this.root.querySelector('#modal-export-audio');
+    if (exportModal) {
+      if (rec.hasPendingExport) {
+        exportModal.classList.remove('hidden');
+        const seedId = rec.lastRecordedSeedId ?? state.activeSeedId;
+        const targetMins =
+          rec.lastRecordedSource === 'clinical-anchor' && rec.targetDurationSec
+            ? Math.round(rec.targetDurationSec / 60)
+            : null;
+
+        const badgeEl = this.root.querySelector('#export-modal-badge');
+        if (badgeEl) {
+          badgeEl.textContent =
+            rec.lastRecordedSource === 'clinical-anchor'
+              ? 'Patient Take-Home Anchor Ready'
+              : 'Sanctuary Capture Ready';
+        }
+
+        const durEl = this.root.querySelector('#export-modal-duration');
+        if (durEl) {
+          durEl.textContent = `${this.formatRemainingTime(rec.lastRecordedDurationSec)} (${SEED_PRESETS[seedId].name})`;
+        }
+
+        const srEl = this.root.querySelector('#export-modal-samplerate');
+        if (srEl) {
+          srEl.textContent = `${(rec.lastRecordedSampleRate / 1000).toFixed(1)} kHz · 16-bit Stereo`;
+        }
+
+        const wavNameEl = this.root.querySelector('#export-filename-wav');
+        if (wavNameEl) {
+          wavNameEl.textContent = buildPoeticAudioFilename(seedId, 'wav', targetMins);
+        }
+
+        const webmNameEl = this.root.querySelector('#export-filename-webm');
+        if (webmNameEl) {
+          webmNameEl.textContent = buildPoeticAudioFilename(seedId, 'webm', targetMins);
+        }
+
+        const wavSizeEl = this.root.querySelector('#export-size-wav');
+        if (wavSizeEl) {
+          const sizeStr = this.audioEngine.recorder.getEstimatedFileSizeLabel('wav');
+          wavSizeEl.textContent = sizeStr ? `· ${sizeStr}` : '';
+        }
+
+        const webmSizeEl = this.root.querySelector('#export-size-webm');
+        if (webmSizeEl) {
+          const sizeStr = this.audioEngine.recorder.getEstimatedFileSizeLabel('webm');
+          webmSizeEl.textContent = sizeStr ? `· ${sizeStr}` : '';
+        }
+      } else {
+        exportModal.classList.add('hidden');
       }
     }
   }

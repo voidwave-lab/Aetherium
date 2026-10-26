@@ -18,10 +18,12 @@
  */
 
 import * as Tone from 'tone';
+import { AudioRecorder } from './AudioRecorder';
 import { HarmonicEngine, HarmonicZoneId } from './HarmonicEngine';
 import { SerendipityEngine } from './SerendipityEngine';
 import {
   AetheriumState,
+  ClinicalAnchorDurationMinutes,
   SatelliteTriggerPayload,
   SEED_PRESETS,
   SeedId,
@@ -203,10 +205,14 @@ export class AudioEngine {
   private ghostShimmerReverb: Tone.Reverb | null = null;
   private ghostShimmerSynth: Tone.PolySynth<Tone.AMSynth> | null = null;
 
+  // Extension: Studio-Quality Dual-Format Audio Recorder (16-bit WAV & 256kbps Compact WebM)
+  public readonly recorder: AudioRecorder;
+
   private sessionTickInterval: number | null = null;
   private crackleTickInterval: number | null = null;
 
   constructor() {
+    this.recorder = new AudioRecorder();
     this.serendipityEngine = new SerendipityEngine({
       onRubatoArpeggioNote: (note, durationSec, velocity, pan) => {
         this.triggerSerendipityArpeggioNote(note, durationSec, velocity, pan);
@@ -369,6 +375,40 @@ export class AudioEngine {
     store.setPlaying(false);
   }
 
+  /**
+   * Toggles live session capture from the Poetic Dock ("Capture Sanctuary").
+   * Automatically starts audio playback if not already running.
+   */
+  public async toggleLiveCapture(): Promise<void> {
+    if (store.getState().recording.isRecording) {
+      await this.recorder.stopRecording();
+      return;
+    }
+    if (!store.getState().isPlaying) {
+      this.userExplicitlyMuted = false;
+      await this.start();
+    }
+    this.recorder.startRecording('live-explorer');
+  }
+
+  /**
+   * Starts a timed clinical "Patient Take-Home Anchor" capture from the Practitioner Dock
+   * (3 Min Loop, 5 Min Anchor, or 10 Min Rest).
+   */
+  public async startClinicalAnchorCapture(
+    durationMinutes: ClinicalAnchorDurationMinutes,
+    anchorLabel: string
+  ): Promise<void> {
+    if (store.getState().recording.isRecording) {
+      this.recorder.cancelRecording();
+    }
+    if (!store.getState().isPlaying) {
+      this.userExplicitlyMuted = false;
+      await this.start();
+    }
+    this.recorder.startRecording('clinical-anchor', durationMinutes, anchorLabel);
+  }
+
   private initializeDspGraph(): void {
     const state = store.getState();
     const { luminance, fog, viscosity, nostalgia } = state.macros;
@@ -376,6 +416,9 @@ export class AudioEngine {
 
     // 1. Master Safety Limiter (-1.0 dBFS) & Glue Compressor
     this.masterLimiter = new Tone.Limiter(-1.0).toDestination();
+    // Connect Studio Audio Recorder tap right after Master Limiter/EQ
+    this.recorder.attachToMasterBus(this.masterLimiter);
+
     this.masterCompressor = new Tone.Compressor({
       threshold: -16,
       ratio: 3.0,

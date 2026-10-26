@@ -125,6 +125,20 @@ fn load_constellation_json(file_path: String) -> Result<String, String> {
     Ok(content)
 }
 
+#[tauri::command]
+fn save_audio_binary_file(file_path: String, bytes: Vec<u8>) -> Result<String, String> {
+    let path = PathBuf::from(&file_path);
+    if let Some(parent) = path.parent() {
+        if !parent.exists() {
+            fs::create_dir_all(parent)
+                .map_err(|err| format!("Failed to create parent directory: {}", err))?;
+        }
+    }
+    fs::write(&path, &bytes)
+        .map_err(|err| format!("Failed to write audio file to {}: {}", file_path, err))?;
+    Ok(path.to_string_lossy().into_owned())
+}
+
 fn main() {
     tauri::Builder::default()
         .setup(|app| {
@@ -135,7 +149,8 @@ fn main() {
         })
         .invoke_handler(tauri::generate_handler![
             save_constellation_json,
-            load_constellation_json
+            load_constellation_json,
+            save_audio_binary_file
         ])
         .run(tauri::generate_context!())
         .expect("error while running Aetherium Tauri application");

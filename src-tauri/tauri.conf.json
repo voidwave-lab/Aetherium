@@ -23,11 +23,17 @@
         "removeFile": true,
         "exists": true,
         "scope": [
+          "$AUDIO/*",
+          "$AUDIO/**",
+          "$DESKTOP/*",
+          "$DESKTOP/**",
+          "$DOWNLOAD/*",
+          "$DOWNLOAD/**",
+          "$DOCUMENT/*",
+          "$DOCUMENT/**",
           "$APPDATA/**",
           "$APPCONFIG/**",
-          "$LOCALDATA/**",
-          "$DOCUMENT/**",
-          "$DOWNLOAD/**"
+          "$LOCALDATA/**"
         ]
       },
       "dialog": {
