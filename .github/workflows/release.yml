@@ -1,4 +1,5 @@
-name: Release Aetherium Desktop Binaries
+# SPDX-License-Identifier: GPL-3.0-or-later
+name: Release Aetherium Multi-Platform Binaries (Desktop & Android APK)
 
 on:
   push:
@@ -7,15 +8,15 @@ on:
   workflow_dispatch:
     inputs:
       tag_name:
-        description: 'Release tag name (when triggered manually, e.g., v0.3.0)'
+        description: 'Release tag name (when triggered manually, e.g., v0.4.0)'
         required: false
-        default: 'v0.3.0'
+        default: 'v0.4.0'
 
 permissions:
   contents: write
 
 jobs:
-  publish-tauri:
+  publish-tauri-desktop:
     strategy:
       fail-fast: false
       matrix:
@@ -77,15 +78,64 @@ jobs:
           tagName: "${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name || 'v__VERSION__' }}"
           releaseName: "Aetherium ${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name || 'v__VERSION__' }}"
           releaseBody: |
-            ## Aetherium — Generative Soundscape & Receptive Music Therapy
+            ## Aetherium — Unified Multi-Platform Sanctuary (`voidwave-lab`)
 
-            Download the native desktop installer for your operating system below:
+            Download the native installer for your platform below:
             - **macOS (Apple Silicon M1/M2/M3/M4):** `Aetherium_..._aarch64.dmg`
             - **macOS (Intel):** `Aetherium_..._x64.dmg`
             - **Windows (10 / 11):** `Aetherium_..._x64-setup.exe` or `.msi`
             - **Linux (Ubuntu / Debian / Fedora):** `Aetherium_..._amd64.AppImage` or `.deb`
+            - **Android (Aetherium Pocket APK):** `Aetherium-Pocket.apk`
+            - **Mobile Web / PWA (Instant):** [`https://voidwave-lab.github.io/Aetherium/pocket.html`](https://voidwave-lab.github.io/Aetherium/pocket.html)
 
-            *Zero external telemetry. All audio synthesis and clinical session presets run 100% locally on your machine.*
+            *100% Free & Libre under GNU GPL v3.0 (`GPL-3.0-or-later`). Zero telemetry, zero ads, zero subscriptions.*
           releaseDraft: true
           prerelease: false
           args: ${{ matrix.args }}
+
+  build-android-pocket:
+    runs-on: ubuntu-22.04
+    needs: publish-tauri-desktop
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Setup Java JDK 17 for Android Gradle
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Install Dependencies & Capacitor Android Tooling
+        run: |
+          npm install
+          npm install --no-save @capacitor/core @capacitor/cli @capacitor/android
+
+      - name: Build Unified Web Bundle & Scaffold Capacitor Android Target
+        run: |
+          npm run build
+          if [ ! -d "android" ]; then
+            npx cap add android
+          fi
+          cp dist/pocket.html dist/index.html
+          npx cap sync android
+
+      - name: Build Android APK via Gradle
+        working-directory: ./android
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
+          cp app/build/outputs/apk/debug/app-debug.apk ../Aetherium-Pocket.apk
+
+      - name: Upload Aetherium-Pocket.apk to GitHub Release
+        uses: softprops/action-gh-release@v2
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: "${{ github.ref_type == 'tag' && github.ref_name || github.event.inputs.tag_name }}"
+          files: Aetherium-Pocket.apk

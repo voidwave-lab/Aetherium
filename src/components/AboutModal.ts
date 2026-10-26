@@ -19,7 +19,7 @@
 
 import { store } from '../state/store';
 
-type AboutTabId = 'all' | 'commons' | 'opensource' | 'bibliography' | 'license';
+type AboutTabId = 'all' | 'commons' | 'transparency' | 'opensource' | 'bibliography' | 'license';
 
 function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_IPC__' in window;
@@ -93,6 +93,9 @@ export class AboutModal {
           <button type="button" data-about-tab="commons" class="px-3 py-1 rounded-full transition-colors">
             A. Commons &amp; Ethical AI
           </button>
+          <button type="button" data-about-tab="transparency" class="px-3 py-1 rounded-full transition-colors">
+            Zero-Profit &amp; Transparency
+          </button>
           <button type="button" data-about-tab="opensource" class="px-3 py-1 rounded-full transition-colors">
             B. Open-Source Ecosystem
           </button>
@@ -123,6 +126,64 @@ export class AboutModal {
             <p class="text-slate-300">
               Because this sanctuary stands on the shoulders of decades of shared human scholarship and open-source code, releasing Aetherium under the strict copyleft <strong>GNU General Public License v3.0 (GPL-3.0-or-later)</strong> is our moral commitment to return this work to the commons—ensuring <strong>100% offline privacy</strong>, <strong>zero telemetry</strong>, <strong>zero subscriptions</strong>, and permanent immunity to proprietary enclosure.
             </p>
+          </section>
+
+          <!-- =================================================================== -->
+          <!-- ZERO-PROFIT & RADICAL TRANSPARENCY PLEDGE (VOIDWAVE-LAB)            -->
+          <!-- =================================================================== -->
+          <section data-about-section="transparency" class="rounded-2xl p-5 bg-slate-900/60 border border-emerald-500/30 space-y-3.5">
+            <div class="flex flex-wrap items-center justify-between gap-2">
+              <h3 class="text-sm font-semibold uppercase tracking-[0.14em] text-emerald-200">
+                Zero-Profit &amp; Radical Financial Transparency Pledge (voidwave-lab)
+              </h3>
+              <span class="text-[10px] font-mono text-emerald-300/85 uppercase">100% Surplus Donated Forward</span>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-3 text-xs">
+              <div class="rounded-xl p-3.5 bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <div class="font-semibold text-emerald-300">1. The Zero-Profit Pledge</div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">
+                  <strong>Aetherium</strong> (Desktop &amp; Pocket) is 100% free and libre forever. There are zero ads, zero subscriptions, zero locked seeds, and <strong>$0.00 personal profit</strong> taken by <code>voidwave-lab</code>.
+                </p>
+              </div>
+
+              <div class="rounded-xl p-3.5 bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <div class="font-semibold text-sky-300">2. Community Support &amp; Annual Audit</div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">
+                  Optional community contributions strictly cover mandatory distribution infrastructure (such as the <strong>$99/year Apple Developer Program fee</strong> for iOS App Store &amp; TestFlight signing). <strong>100% of surplus funds</strong> are audited annually in <code>TRANSPARENCY.md</code> and donated forward to mental health non-profits and open-source foundations.
+                </p>
+              </div>
+
+              <div class="rounded-xl p-3.5 bg-slate-950/70 border border-slate-800 space-y-1.5">
+                <div class="font-semibold text-indigo-300">3. GPLv3 App Store Exception</div>
+                <p class="text-slate-300 text-[11px] leading-relaxed">
+                  Under <strong>GPLv3 Section 7</strong>, <code>voidwave-lab</code> grants explicit additional permission in <code>LICENSE</code> to distribute compiled binaries of Aetherium via the Apple App Store, TestFlight, Google Play, and F-Droid while keeping the full source code strictly copyleft.
+                </p>
+              </div>
+            </div>
+
+            <div class="flex flex-wrap items-center justify-between gap-2 pt-1">
+              <a
+                href="https://patreon.com/voidwavelab"
+                data-external-link="https://patreon.com/voidwavelab"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3.5 py-2 rounded-xl bg-emerald-500/15 hover:bg-emerald-500/25 border border-emerald-400/40 text-emerald-200 font-mono text-[11px] transition-all inline-flex items-center gap-2"
+              >
+                <span>♥ Community Infrastructure Support</span>
+                <span class="opacity-80">patreon.com/voidwavelab ↗</span>
+              </a>
+
+              <a
+                href="https://github.com/voidwave-lab/Aetherium/blob/main/TRANSPARENCY.md"
+                data-external-link="https://github.com/voidwave-lab/Aetherium/blob/main/TRANSPARENCY.md"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="px-3.5 py-2 rounded-xl bg-slate-950/80 hover:bg-slate-900 border border-slate-700/80 text-slate-300 font-mono text-[11px] transition-all inline-flex items-center gap-2"
+              >
+                <span>Inspect Public Audit Ledger (TRANSPARENCY.md) ↗</span>
+              </a>
+            </div>
           </section>
 
           <!-- =================================================================== -->

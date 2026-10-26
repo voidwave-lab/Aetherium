@@ -533,3 +533,14 @@ Aveți libertatea irevocabilă de a:
 4. **Modifica** și îmbunătăți programul, cu condiția strictă copyleft ca orice lucrare derivată sau redistribuire să rămână liberă și open-source sub aceeași licență **GNU GPL v3.0**.
 
 Consultați fișierul [`LICENSE`](./LICENSE) pentru textul integral al licenței.
+
+---
+
+## F. Angajamentul Zero-Profit și Transparență Financiară Radicală (`voidwave-lab`)
+
+1. **Angajamentul Zero-Profit:** Aetherium este 100% gratuit și open-source pe toate platformele: Desktop (macOS, Windows, Linux via Tauri) și **Aetherium Pocket** (Mobile Web / PWA, iOS și Android via Capacitor). Nu există reclame, abonamente, achiziții în aplicație, telemetrie și **$0.00 profit personal** reținut de `voidwave-lab`.
+2. **Susținerea Comunității și Registrul Public Anual (`TRANSPARENCY.md`):**
+   - **Patreon:** [`https://patreon.com/voidwavelab`](https://patreon.com/voidwavelab)
+   - În timp ce găzduirea pe GitHub, pachetele Desktop, versiunea PWA (`pocket.html`) și fișierele Android `.apk` sunt distribuite gratuit, publicarea aplicației native iOS în **Apple App Store & TestFlight** impune o taxă anuală obligatorie de **$99.00 USD / an** către Apple Developer Program.
+   - Contribuțiile comunității acoperă strict aceste costuri de infrastructură. La sfârșitul fiecărui an, `voidwave-lab` publică auditul financiar complet în [`TRANSPARENCY.md`](./TRANSPARENCY.md) și **donează 100% din surplus** către organizații non-profit de sănătate mintală și fundații open-source.
+3. **Excepția GPLv3 Secțiunea 7 pentru Magazinele Mobile:** Pentru a permite distribuirea binarelor compilate prin Apple App Store, TestFlight, Google Play și F-Droid fără a intra în conflict cu restricțiile DRM din Secțiunile 6/10 ale GPLv3, `voidwave-lab` acordă o permisiune suplimentară explicită conform **Secțiunii 7 din GPLv3** la finalul fișierului [`LICENSE`](./LICENSE), păstrând codul sursă strict copyleft (`GPL-3.0-or-later`).

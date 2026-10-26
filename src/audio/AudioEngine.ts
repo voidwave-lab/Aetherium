@@ -241,7 +241,15 @@ export class AudioEngine {
     this.sessionTickInterval = window.setInterval(() => {
       const st = store.getState();
       if (st.isPlaying && st.sleepTimerRemainingSec !== null) {
+        if (st.sleepTimerRemainingSec <= 20 && this.masterGain) {
+          const fadeRatio = Math.max(0.001, (st.sleepTimerRemainingSec - 1) / 20);
+          const targetVol = safeFinite(st.masterVolume * fadeRatio, 0.01);
+          this.masterGain.gain.rampTo(targetVol, 0.95);
+        }
         store.tickSleepTimer();
+        if (!store.getState().isPlaying) {
+          this.stop(true);
+        }
       }
       if (st.mode === 'practitioner' && st.practitioner.isoArcRunning) {
         store.tickIsoSessionArc(1);
@@ -347,7 +355,7 @@ export class AudioEngine {
     }
   }
 
-  public stop(): void {
+  public stop(suspendContextOvernight = false): void {
     if (this.masterGain) {
       const now = Tone.now();
       this.masterGain.gain.cancelScheduledValues(now);
@@ -370,6 +378,13 @@ export class AudioEngine {
         this.stopContinuousGenerators();
         this.activeSeedId = null;
         this.activeHarmonicZoneId = null;
+
+        if (suspendContextOvernight) {
+          const rawCtx = Tone.getContext().rawContext as AudioContext;
+          if (rawCtx && rawCtx.state === 'running' && typeof rawCtx.suspend === 'function') {
+            void rawCtx.suspend();
+          }
+        }
       }
     }, 1050);
 

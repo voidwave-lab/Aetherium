@@ -36,7 +36,7 @@ export type SeedId =
   | 'cathedral-choir'
   | 'bowed-glass-strings';
 
-export type SleepTimerDuration = 0 | 15 | 30 | 60;
+export type SleepTimerDuration = 0 | 15 | 30 | 45 | 60;
 
 export type IsoDurationMinutes = 20 | 45 | 50 | 60;
 
@@ -294,6 +294,8 @@ export interface AetheriumState {
   activeSeedId: SeedId;
   macros: MacroParams;
   satellites: SatelliteNode[];
+  /** Maximum active satellites (12 on Desktop, 8 in Aetherium Pocket mobile mode) */
+  maxSatellites: number;
   /** Normalized stereo & spatial offset of the Central Core (-1.0 to +1.0) */
   coreOffset: {
     x: number;
@@ -667,6 +669,7 @@ class AetheriumStore {
       activeSeedId: defaultSeed.id,
       macros: { ...defaultSeed.defaultMacros },
       satellites: createSatellitesForPreset(defaultSeed),
+      maxSatellites: MAX_SATELLITES,
       coreOffset: { x: 0, y: 0 },
       isPlaying: false,
       masterVolume: 0.84,
@@ -867,6 +870,16 @@ class AetheriumStore {
     this.emit();
   }
 
+  public setMaxSatellites(limit: number): void {
+    const clampedLimit = Math.max(1, Math.min(MAX_SATELLITES, Math.round(limit)));
+    this.state = {
+      ...this.state,
+      maxSatellites: clampedLimit,
+      satellites: this.state.satellites.slice(0, clampedLimit),
+    };
+    this.emit();
+  }
+
   public selectSeed(seedId: SeedId): void {
     const preset = SEED_PRESETS[seedId];
     if (!preset) return;
@@ -883,7 +896,7 @@ class AetheriumStore {
         ...preset.defaultMacros,
         serendipity: emdrActive ? 0.0 : preset.defaultMacros.serendipity,
       },
-      satellites: createSatellitesForPreset(preset),
+      satellites: createSatellitesForPreset(preset).slice(0, this.state.maxSatellites),
     };
     this.showToast(`Seed Loaded: ${preset.name} (${preset.subtitle})`);
     this.emit();
@@ -921,8 +934,9 @@ class AetheriumStore {
   }
 
   public spawnSatellite(semiMajorAxis: number, angle: number): SatelliteNode | null {
-    if (this.state.satellites.length >= MAX_SATELLITES) {
-      this.showToast(`Constellation full (${MAX_SATELLITES} Harmonic Satellites max)`);
+    const limit = this.state.maxSatellites;
+    if (this.state.satellites.length >= limit) {
+      this.showToast(`Constellation full (${limit} Harmonic Satellites max)`);
       return null;
     }
 
@@ -986,6 +1000,24 @@ class AetheriumStore {
       };
       this.emit();
     }
+  }
+
+  public clearSatellites(): void {
+    if (this.state.satellites.length === 0) return;
+    this.state = {
+      ...this.state,
+      satellites: [],
+    };
+    this.showToast('All harmonic satellites dissolved');
+    this.emit();
+  }
+
+  public setMasterVolume(volume: number): void {
+    this.state = {
+      ...this.state,
+      masterVolume: Math.max(0, Math.min(1, volume)),
+    };
+    this.emit();
   }
 
   public emitSatelliteTrigger(satellite: SatelliteNode): SatelliteTriggerPayload {

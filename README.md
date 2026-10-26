@@ -1,14 +1,15 @@
 # AETHERIUM
 
-**Generative Ambient Soundscape & Receptive Music Therapy Desktop Sanctuary**
+**Unified Multi-Platform Generative Ambient Soundscape & Receptive Music Therapy Sanctuary (`voidwave-lab`)**
 
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3%2B-emerald.svg)](./LICENSE)
+[![Transparency: Zero-Profit Pledge](https://img.shields.io/badge/Transparency-Zero--Profit%20Ledger-teal.svg)](./TRANSPARENCY.md)
 [![Privacy: 100% Offline & Zero Telemetry](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Telemetry-indigo.svg)](#part-iv-ethics-open-source-credits-academic-bibliography--gnu-gpl-v30-license)
 [![Audio: 100% Procedural DSP](https://img.shields.io/badge/Audio-100%25%20Procedural%20DSP%20(Zero%20Samples)-cyan.svg)](#4-multi-layer-procedural-web-audio--psychoacoustic-dsp-graph)
 
 > 🌐 **Language / Limba:** [**English (`README.md`)**](./README.md) | [**Română (`README.ro.md`)**](./README.ro.md)
 
-Aetherium is a free, open-source, lightweight native desktop application for **macOS**, **Windows**, and **Linux**. It synthesizes continuous, never-repeating ambient music and clinical soundscapes in real time—requiring zero musical training, zero internet connection, and zero external audio samples.
+Aetherium is a free, open-source, unified multi-platform sanctuary built by **[voidwave-lab](https://github.com/voidwave-lab)** for **macOS**, **Windows**, **Linux** (via Tauri v1), and **iOS**, **Android**, & **Mobile Web / PWA** ("**Aetherium Pocket**" via Capacitor & Service Worker). It synthesizes continuous, never-repeating ambient music and clinical soundscapes in real time—requiring zero musical training, zero internet connection, and zero external audio samples.
 
 It is designed for two distinct user groups:
 - **Solo Explorer**: Everyday listeners seeking nervous-system self-regulation, deep focus, contemplative drift, or restorative sleep.
@@ -55,6 +56,8 @@ You do **not** need to install any programming tools or write any code to use Ae
    - **Windows (Windows 10 / 11):** Download `Aetherium_..._x64-setup.exe` (or `.msi`) and double-click to run the installer.
      - *Windows First-Launch Tip:* If Windows SmartScreen appears, click **More info → Run anyway**.
    - **Linux (Ubuntu / Debian / Mint / Fedora):** Download `Aetherium_..._amd64.AppImage` (make it executable with `chmod +x Aetherium*.AppImage` and double-click) or install the Debian package (`sudo dpkg -i Aetherium_..._amd64.deb`).
+   - **Mobile Web / Instant PWA ("Aetherium Pocket"):** Open [`https://voidwave-lab.github.io/Aetherium/pocket.html`](https://voidwave-lab.github.io/Aetherium/pocket.html) on iOS Safari or Android Chrome and select **Share → Add to Home Screen** for a 100% offline, full-screen portrait sanctuary with Lock Screen media controls, Battery Guard, Gyroscope Tilt, and an overnight Sleep Timer (`15m` / `30m` / `45m` / `60m`).
+   - **Native Android (`.apk`) & iOS (Xcode / TestFlight):** Download `Aetherium-Pocket.apk` directly from the GitHub Releases page, or build for iOS / Android via Capacitor (`npm run cap:sync`).
 
 ---
 
@@ -435,32 +438,56 @@ npm run tauri dev
 
 # Or run the frontend in a standard web browser at http://localhost:1420
 npm run dev
+
+# Run the dedicated mobile target ("Aetherium Pocket") at http://localhost:1420/pocket.html
+npm run dev:pocket
+
+# Build both Desktop (dist/index.html) and Mobile Pocket (dist/pocket.html) bundles
+npm run build:all
+
+# Sync with Capacitor for Native iOS (Xcode) & Android (.apk)
+npm run cap:sync
+npm run ios:open
+npm run android:open
 ```
 
 ## 3. Repository File Structure
 
 ```text
 Aetherium/
-├── .github/workflows/release.yml   # Cross-platform CI/CD matrix (macOS, Linux, Windows)
-├── LICENSE                         # GNU General Public License v3.0 (GPL-3.0-or-later)
-├── README.md                       # Documentation (English)
-├── README.ro.md                    # Documentation (Romanian / Română)
+├── .github/workflows/
+│   ├── release.yml                 # Cross-platform CI/CD (macOS, Linux, Windows + Android APK)
+│   └── deploy-pages.yml            # Automatic PWA deployment to GitHub Pages (pocket.html)
+├── LICENSE                         # GNU GPL v3.0 + Section 7 Mobile App Store Exception
+├── TRANSPARENCY.md                 # Zero-Profit Pledge & Annual Public Financial Audit Ledger
+├── capacitor.config.ts             # Capacitor native iOS & Android configuration (org.voidwavelab.aetherium)
+├── index.html                      # Desktop Tauri HTML entrypoint
+├── pocket.html                     # Mobile / PWA / Capacitor HTML entrypoint ("Aetherium Pocket")
+├── public/
+│   ├── manifest.json               # PWA Web App Manifest (#07090e portrait standalone)
+│   └── sw.js                       # Offline-first Service Worker for Aetherium Pocket
+├── mobile/
+│   ├── ios/Info.plist.template     # iOS UIBackgroundModes (audio) & zero-microphone privacy template
+│   └── android/AndroidManifest.xml.template # Android WAKE_LOCK & foreground media playback template
 ├── src-tauri/                      # Rust Tauri v1 backend & native OS window/filesystem config
 │   ├── Cargo.toml                  # Size-optimized Rust release profile (opt-level = "z", LTO)
 │   ├── tauri.conf.json             # 1280x800 dark sanctuary window & scoped FS/Dialog allowlist
 │   └── src/main.rs                 # Native JSON constellation & binary audio save/load commands
 └── src/
-    ├── main.ts                     # Application bootstrap
+    ├── main.ts                     # Desktop application bootstrap (Explorer + Practitioner + Recorder)
+    ├── main-pocket.ts              # Mobile Pocket bootstrap ("Touch to Awaken", 8-orbit cap, PWA SW)
     ├── state/store.ts              # Reactive store, recording state & ISO-Principle vector engine
     ├── audio/
     │   ├── HarmonicEngine.ts       # Luminance modal quantization, IV/VI shifts & register mapping
     │   ├── SerendipityEngine.ts    # Stochastic rubato arpeggios, modal breezes & ghost shimmers
     │   ├── AudioRecorder.ts        # 16-bit PCM WAV encoder (2s/3s cosine fades) & 256kbps WebM recorder
+    │   ├── MobileAudioBridge.ts    # iOS/Android lock-screen background audio & W3C MediaSession API
     │   └── AudioEngine.ts          # Multi-layer procedural Tone.js synth + clinical DSP bus
     ├── canvas/
-    │   └── SanctuaryCanvas.ts      # 60fps Keplerian physics, Meridian, comets, auroras & EMDR glow
+    │   └── SanctuaryCanvas.ts      # 60fps Keplerian physics, multi-touch, double-tap & Battery Guard
     └── components/
-        ├── AboutModal.ts           # "ⓘ Ethics, Credits & Bibliography" modal (Commons, Links, Bibliography)
+        ├── AboutModal.ts           # "ⓘ Ethics, Credits, Transparency & Bibliography" modal
+        ├── MobileDock.ts           # Swipeable portrait Bottom Sheet, Sleep Timer & Gyroscope Tilt
         ├── OnboardingModal.ts      # "Select Your Space" initial launch modal
         ├── TopBar.ts               # Mode switcher pill, Ethics button, telemetry & JSON export/import
         ├── PoeticDock.ts           # 8 Seed presets, 6 Poetic sliders, Live Capture & Export Modal
@@ -533,3 +560,14 @@ You have the irrevocable freedom to:
 4. **Modify** and improve the program, under the strict copyleft condition that any derivative work or redistribution remains free and open-source under the same **GNU GPL v3.0** license.
 
 See the [`LICENSE`](./LICENSE) file for the full official license text.
+
+---
+
+## F. Zero-Profit & Radical Financial Transparency Pledge (`voidwave-lab`)
+
+1. **The Zero-Profit Pledge:** Aetherium is 100% free and open-source across Desktop, Web/PWA, iOS, and Android. There are zero advertisements, zero subscriptions, zero in-app purchases, zero telemetry, and **$0.00 personal profit** taken by `voidwave-lab`.
+2. **Community Support & Annual Public Audit (`TRANSPARENCY.md`):**
+   - **Patreon:** [`https://patreon.com/voidwavelab`](https://patreon.com/voidwavelab)
+   - While GitHub hosting, Desktop installers, the GitHub Pages PWA, and Android `.apk` releases are free to distribute, publishing native iOS builds on the **Apple App Store & TestFlight** requires a mandatory **$99.00 USD / year Apple Developer Program fee**.
+   - Community contributions are used strictly to cover annual platform distribution costs. At the end of each year, `voidwave-lab` publishes a full financial audit in [`TRANSPARENCY.md`](./TRANSPARENCY.md) and **donates 100% of surplus funds forward** to mental health non-profits and open-source foundations.
+3. **GPLv3 Section 7 Mobile App Store Exception:** To ensure iOS and Android users can install Aetherium effortlessly from official app stores without conflicting with GPLv3 Section 6/10 digital-signature terms, `voidwave-lab` includes a formal **GPLv3 Section 7 Additional Permission** at the end of [`LICENSE`](./LICENSE) permitting binary distribution through the Apple App Store, TestFlight, Google Play, and F-Droid while keeping the source code strictly copyleft (`GPL-3.0-or-later`).

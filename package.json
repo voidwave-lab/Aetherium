@@ -2,14 +2,19 @@
   "name": "aetherium",
   "private": true,
   "version": "0.1.0",
-  "description": "Aetherium — Generative Soundscape & Receptive Music Therapy Desktop Sanctuary",
+  "description": "Aetherium — Unified Multi-Platform Generative Soundscape & Receptive Music Therapy Sanctuary (Desktop Tauri + Mobile Pocket PWA / iOS / Android)",
   "license": "GPL-3.0-or-later",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "dev:pocket": "vite --host --open /pocket.html",
     "build": "tsc && vite build",
+    "build:all": "vite build",
     "preview": "vite preview",
-    "tauri": "tauri"
+    "tauri": "tauri",
+    "cap:sync": "vite build && npx cap sync",
+    "ios:open": "npx cap open ios",
+    "android:open": "npx cap open android"
   },
   "dependencies": {
     "@tauri-apps/api": "^1.6.0",

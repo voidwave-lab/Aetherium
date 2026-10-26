@@ -1,0 +1,20 @@
+{
+  "name": "Aetherium Pocket — Generative Ambient Sanctuary",
+  "short_name": "Aetherium",
+  "description": "Open-source generative ambient soundscape & receptive music therapy sanctuary by voidwave-lab.",
+  "start_url": "./pocket.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#07090e",
+  "theme_color": "#07090e",
+  "categories": ["music", "health", "lifestyle", "medical"],
+  "icons": [
+    {
+      "src": "icons/aetherium-icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

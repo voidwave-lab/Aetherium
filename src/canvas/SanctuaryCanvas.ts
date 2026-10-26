@@ -129,17 +129,27 @@ interface GhostEchoHalo {
   hue: number;
 }
 
+export interface SanctuaryCanvasOptions {
+  /** Maximum active satellites (12 on Desktop, 8 in Pocket mobile mode) */
+  maxSatellites?: number;
+  /** Whether running in the mobile portrait "Aetherium Pocket" layout */
+  isPocketMode?: boolean;
+}
+
 export class SanctuaryCanvas {
   private canvas: HTMLCanvasElement;
   private ctx: CanvasRenderingContext2D;
   private grainCanvas: HTMLCanvasElement;
   private grainCtx: CanvasRenderingContext2D;
   private audioEngine: AudioEngine;
+  private maxSatellites: number;
+  private isPocketMode: boolean;
 
   private width = 1280;
   private height = 800;
   private dpr = 1;
   private animationFrameId: number | null = null;
+  private backgroundPhysicsIntervalId: number | null = null;
   private lastFrameTime = performance.now();
 
   private trails: Map<string, TrailPoint[]> = new Map();
@@ -157,8 +167,12 @@ export class SanctuaryCanvas {
   private isDraggingCore = false;
   private pointerDownPos: { x: number; y: number } | null = null;
   private pointerMovedDistance = 0;
+  private isHandlingTouch = false;
 
-  // Long-press dissolve state
+  // Double-tap & long-press dissolve state
+  private lastTappedSatelliteId: string | null = null;
+  private lastTappedAt = 0;
+  private readonly DOUBLE_TAP_MS = 320;
   private longPressTargetId: string | null = null;
   private longPressStartTime = 0;
   private readonly LONG_PRESS_MS = 520;
@@ -166,10 +180,18 @@ export class SanctuaryCanvas {
   // Meridian flash intensity (decays smoothly)
   private meridianFlash = 0;
 
-  constructor(container: HTMLElement, audioEngine: AudioEngine) {
+  constructor(
+    container: HTMLElement,
+    audioEngine: AudioEngine,
+    options?: SanctuaryCanvasOptions
+  ) {
     this.audioEngine = audioEngine;
+    this.maxSatellites = options?.maxSatellites ?? MAX_SATELLITES;
+    this.isPocketMode = Boolean(options?.isPocketMode);
+    store.setMaxSatellites(this.maxSatellites);
+
     this.canvas = document.createElement('canvas');
-    this.canvas.className = 'block w-full h-full cursor-crosshair';
+    this.canvas.className = 'block w-full h-full cursor-crosshair touch-none';
     container.appendChild(this.canvas);
 
     const context = this.canvas.getContext('2d', { alpha: false });
@@ -242,6 +264,16 @@ export class SanctuaryCanvas {
 
   private getCoreScreenCenter(): { cx: number; cy: number; maxOrbitRadius: number } {
     const state = store.getState();
+    if (this.isPocketMode || this.width < 640) {
+      const usableHeight = this.height - 170;
+      const baseCx = this.width * 0.5;
+      const baseCy = Math.max(185, usableHeight * 0.46 + 24);
+      const maxOrbitRadius = Math.min(this.width * 0.44, usableHeight * 0.43);
+      const cx = baseCx + state.coreOffset.x * Math.min(110, this.width * 0.18);
+      const cy = baseCy + state.coreOffset.y * Math.min(60, this.height * 0.08);
+      return { cx, cy, maxOrbitRadius };
+    }
+
     const usableHeight = this.height - 130; // Account for top HUD and bottom Poetic Dock
     // Slightly shift center left when Practitioner Dock is expanded so constellation stays balanced
     const practitionerShiftX =
@@ -300,129 +332,207 @@ export class SanctuaryCanvas {
     };
   }
 
+  private handleInputDown(px: number, py: number, isTouch = false): void {
+    this.audioEngine.ensureStartedFromGesture();
+    this.pointerDownPos = { x: px, y: py };
+    this.pointerMovedDistance = 0;
+
+    const hitSat = this.findSatelliteAtPoint(px, py, isTouch ? 28 : 20);
+    if (hitSat) {
+      const now = performance.now();
+      // Double-tap on a satellite to dissolve it
+      if (
+        this.lastTappedSatelliteId === hitSat.id &&
+        now - this.lastTappedAt <= this.DOUBLE_TAP_MS
+      ) {
+        this.lastTappedSatelliteId = null;
+        this.lastTappedAt = 0;
+        this.draggingSatelliteId = null;
+        this.longPressTargetId = null;
+        this.pointerDownPos = null;
+        this.dissolveSatellite(hitSat);
+        return;
+      }
+
+      this.lastTappedSatelliteId = hitSat.id;
+      this.lastTappedAt = now;
+      this.draggingSatelliteId = hitSat.id;
+      this.longPressTargetId = hitSat.id;
+      this.longPressStartTime = now;
+      return;
+    }
+
+    this.lastTappedSatelliteId = null;
+    if (this.isPointOnCore(px, py)) {
+      this.isDraggingCore = true;
+    }
+  }
+
+  private handleInputMove(px: number, py: number): void {
+    if (this.pointerDownPos) {
+      const dx = px - this.pointerDownPos.x;
+      const dy = py - this.pointerDownPos.y;
+      this.pointerMovedDistance = Math.hypot(dx, dy);
+      if (this.pointerMovedDistance > 7) {
+        this.longPressTargetId = null;
+      }
+    }
+
+    const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
+
+    if (this.draggingSatelliteId) {
+      const dx = px - cx;
+      const dy = py - cy;
+      const distPx = Math.hypot(dx, dy);
+      const newSemiMajor = distPx / maxOrbitRadius;
+      const newAngle = Math.atan2(dy, dx);
+      store.updateSatelliteOrbit(this.draggingSatelliteId, newSemiMajor, newAngle);
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    if (this.isDraggingCore) {
+      const state = store.getState();
+      const practitionerShiftX =
+        !this.isPocketMode && state.mode === 'practitioner' && !state.practitioner.isDockCollapsed
+          ? -Math.min(140, this.width * 0.09)
+          : 0;
+      const baseCx = this.width * 0.5 + practitionerShiftX;
+      const usableHeight = this.height - (this.isPocketMode ? 170 : 130);
+      const baseCy = Math.max(
+        this.isPocketMode ? 185 : 220,
+        usableHeight * (this.isPocketMode ? 0.46 : 0.5) + (this.isPocketMode ? 24 : 18)
+      );
+      const maxRangeX = Math.min(180, this.width * 0.16);
+      const maxRangeY = Math.min(75, this.height * 0.08);
+
+      const normX = (px - baseCx) / maxRangeX;
+      const normY = (py - baseCy) / maxRangeY;
+      store.setCoreOffset(normX, normY);
+      this.canvas.style.cursor = 'grabbing';
+      return;
+    }
+
+    // Update hover states
+    const hitSat = this.findSatelliteAtPoint(px, py);
+    this.hoveredSatelliteId = hitSat ? hitSat.id : null;
+    this.isHoveringCore = !hitSat && this.isPointOnCore(px, py);
+
+    if (this.hoveredSatelliteId || this.isHoveringCore) {
+      this.canvas.style.cursor = 'grab';
+    } else {
+      this.canvas.style.cursor = 'crosshair';
+    }
+  }
+
+  private handleInputUp(px: number, py: number): void {
+    // Spawn a new Satellite if user tapped/clicked empty space without dragging
+    if (
+      !this.draggingSatelliteId &&
+      !this.isDraggingCore &&
+      this.pointerDownPos &&
+      this.pointerMovedDistance < 9
+    ) {
+      const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
+      const dx = px - cx;
+      const dy = py - cy;
+      const distPx = Math.hypot(dx, dy);
+      const semiMajorAxis = distPx / maxOrbitRadius;
+
+      if (semiMajorAxis >= 0.11 && semiMajorAxis <= 0.98) {
+        const angle = Math.atan2(dy, dx);
+        const created = store.spawnSatellite(semiMajorAxis, angle);
+        if (created) {
+          const payload = store.emitSatelliteTrigger(created);
+          this.spawnTriggerRipple(px, py, payload.note, payload.silencedByRarity);
+        }
+      }
+    }
+
+    this.draggingSatelliteId = null;
+    this.isDraggingCore = false;
+    this.longPressTargetId = null;
+    this.pointerDownPos = null;
+  }
+
   private bindEvents(): void {
     window.addEventListener('resize', this.handleResize);
+    document.addEventListener('visibilitychange', this.handleVisibilityChange);
 
-    this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
-      if (e.button === 2) {
-        return;
-      }
+    // Explicit multi-touch support (`passive: false` prevents viewport bouncing while dragging satellites)
+    this.canvas.addEventListener(
+      'touchstart',
+      (e: TouchEvent) => {
+        if (e.touches.length === 0) return;
+        e.preventDefault();
+        this.isHandlingTouch = true;
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        this.handleInputDown(touch.clientX - rect.left, touch.clientY - rect.top, true);
+      },
+      { passive: false }
+    );
 
-      this.audioEngine.ensureStartedFromGesture();
+    this.canvas.addEventListener(
+      'touchmove',
+      (e: TouchEvent) => {
+        if (e.touches.length === 0) return;
+        e.preventDefault();
+        const touch = e.touches[0];
+        const rect = this.canvas.getBoundingClientRect();
+        this.handleInputMove(touch.clientX - rect.left, touch.clientY - rect.top);
+      },
+      { passive: false }
+    );
 
+    const handleTouchEnd = (e: TouchEvent): void => {
+      e.preventDefault();
+      const touch = e.changedTouches[0];
       const rect = this.canvas.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-      this.pointerDownPos = { x: px, y: py };
-      this.pointerMovedDistance = 0;
+      const px = touch ? touch.clientX - rect.left : (this.pointerDownPos?.x ?? 0);
+      const py = touch ? touch.clientY - rect.top : (this.pointerDownPos?.y ?? 0);
+      this.handleInputUp(px, py);
+      window.setTimeout(() => {
+        this.isHandlingTouch = false;
+      }, 80);
+    };
 
-      const hitSat = this.findSatelliteAtPoint(px, py);
-      if (hitSat) {
-        this.draggingSatelliteId = hitSat.id;
-        this.longPressTargetId = hitSat.id;
-        this.longPressStartTime = performance.now();
-        this.canvas.setPointerCapture(e.pointerId);
+    this.canvas.addEventListener('touchend', handleTouchEnd, { passive: false });
+    this.canvas.addEventListener('touchcancel', handleTouchEnd, { passive: false });
+
+    // Pointer / Mouse events
+    this.canvas.addEventListener('pointerdown', (e: PointerEvent) => {
+      if (this.isHandlingTouch || e.pointerType === 'touch' || e.button === 2) {
         return;
       }
-
-      if (this.isPointOnCore(px, py)) {
-        this.isDraggingCore = true;
+      const rect = this.canvas.getBoundingClientRect();
+      this.handleInputDown(e.clientX - rect.left, e.clientY - rect.top, false);
+      if (this.draggingSatelliteId || this.isDraggingCore) {
         this.canvas.setPointerCapture(e.pointerId);
-        return;
       }
     });
 
     this.canvas.addEventListener('pointermove', (e: PointerEvent) => {
+      if (this.isHandlingTouch || e.pointerType === 'touch') {
+        return;
+      }
       const rect = this.canvas.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-
-      if (this.pointerDownPos) {
-        const dx = px - this.pointerDownPos.x;
-        const dy = py - this.pointerDownPos.y;
-        this.pointerMovedDistance = Math.hypot(dx, dy);
-        if (this.pointerMovedDistance > 7) {
-          this.longPressTargetId = null;
-        }
-      }
-
-      const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
-
-      if (this.draggingSatelliteId) {
-        const dx = px - cx;
-        const dy = py - cy;
-        const distPx = Math.hypot(dx, dy);
-        const newSemiMajor = distPx / maxOrbitRadius;
-        const newAngle = Math.atan2(dy, dx);
-        store.updateSatelliteOrbit(this.draggingSatelliteId, newSemiMajor, newAngle);
-        this.canvas.style.cursor = 'grabbing';
-        return;
-      }
-
-      if (this.isDraggingCore) {
-        const state = store.getState();
-        const practitionerShiftX =
-          state.mode === 'practitioner' && !state.practitioner.isDockCollapsed
-            ? -Math.min(140, this.width * 0.09)
-            : 0;
-        const baseCx = this.width * 0.5 + practitionerShiftX;
-        const usableHeight = this.height - 130;
-        const baseCy = Math.max(220, usableHeight * 0.5 + 18);
-        const maxRangeX = Math.min(180, this.width * 0.14);
-        const maxRangeY = Math.min(75, this.height * 0.08);
-
-        const normX = (px - baseCx) / maxRangeX;
-        const normY = (py - baseCy) / maxRangeY;
-        store.setCoreOffset(normX, normY);
-        this.canvas.style.cursor = 'grabbing';
-        return;
-      }
-
-      // Update hover states
-      const hitSat = this.findSatelliteAtPoint(px, py);
-      this.hoveredSatelliteId = hitSat ? hitSat.id : null;
-      this.isHoveringCore = !hitSat && this.isPointOnCore(px, py);
-
-      if (this.hoveredSatelliteId || this.isHoveringCore) {
-        this.canvas.style.cursor = 'grab';
-      } else {
-        this.canvas.style.cursor = 'crosshair';
-      }
+      this.handleInputMove(e.clientX - rect.left, e.clientY - rect.top);
     });
 
     const handlePointerUp = (e: PointerEvent): void => {
-      const rect = this.canvas.getBoundingClientRect();
-      const px = e.clientX - rect.left;
-      const py = e.clientY - rect.top;
-
-      // Spawn a new Satellite if user clicked empty space without dragging
-      if (
-        !this.draggingSatelliteId &&
-        !this.isDraggingCore &&
-        this.pointerDownPos &&
-        this.pointerMovedDistance < 6 &&
-        e.button === 0
-      ) {
-        const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
-        const dx = px - cx;
-        const dy = py - cy;
-        const distPx = Math.hypot(dx, dy);
-        const semiMajorAxis = distPx / maxOrbitRadius;
-
-        if (semiMajorAxis >= 0.11 && semiMajorAxis <= 0.98) {
-          const angle = Math.atan2(dy, dx);
-          const created = store.spawnSatellite(semiMajorAxis, angle);
-          if (created) {
-            const payload = store.emitSatelliteTrigger(created);
-            this.spawnTriggerRipple(px, py, payload.note, payload.silencedByRarity);
-          }
-        }
+      if (this.isHandlingTouch || e.pointerType === 'touch') {
+        return;
       }
-
-      this.draggingSatelliteId = null;
-      this.isDraggingCore = false;
-      this.longPressTargetId = null;
-      this.pointerDownPos = null;
+      const rect = this.canvas.getBoundingClientRect();
+      if (e.button === 0) {
+        this.handleInputUp(e.clientX - rect.left, e.clientY - rect.top);
+      } else {
+        this.draggingSatelliteId = null;
+        this.isDraggingCore = false;
+        this.longPressTargetId = null;
+        this.pointerDownPos = null;
+      }
       if (this.canvas.hasPointerCapture(e.pointerId)) {
         this.canvas.releasePointerCapture(e.pointerId);
       }
@@ -444,7 +554,7 @@ export class SanctuaryCanvas {
     });
   }
 
-  private findSatelliteAtPoint(px: number, py: number): SatelliteNode | null {
+  private findSatelliteAtPoint(px: number, py: number, hitRadius = 20): SatelliteNode | null {
     const state = store.getState();
     const { cx, cy, maxOrbitRadius } = this.getCoreScreenCenter();
     const nowSec = performance.now() * 0.001;
@@ -460,7 +570,7 @@ export class SanctuaryCanvas {
         state.macros.nostalgia
       );
       const dist = Math.hypot(px - pos.x, py - pos.y);
-      if (dist <= 20) {
+      if (dist <= hitRadius) {
         return sat;
       }
     }
@@ -542,8 +652,77 @@ export class SanctuaryCanvas {
     return 193 - t * 151;
   }
 
+  private handleVisibilityChange = (): void => {
+    if (document.hidden) {
+      // Battery Guard: pause the 60fps Canvas requestAnimationFrame loop when screen is locked / tab is hidden
+      if (this.animationFrameId !== null) {
+        window.cancelAnimationFrame(this.animationFrameId);
+        this.animationFrameId = null;
+      }
+      // Keep lightweight headless orbital physics running at ~8Hz so satellite meridian notes continue in background
+      if (this.backgroundPhysicsIntervalId === null) {
+        let lastBgTime = performance.now();
+        this.backgroundPhysicsIntervalId = window.setInterval(() => {
+          const now = performance.now();
+          const dt = Math.min(0.25, Math.max(0.01, (now - lastBgTime) * 0.001));
+          lastBgTime = now;
+          this.updateHeadlessOrbitalTriggers(dt);
+        }, 125);
+      }
+    } else {
+      if (this.backgroundPhysicsIntervalId !== null) {
+        window.clearInterval(this.backgroundPhysicsIntervalId);
+        this.backgroundPhysicsIntervalId = null;
+      }
+      this.lastFrameTime = performance.now();
+      if (this.animationFrameId === null) {
+        this.startLoop();
+      }
+    }
+  };
+
+  /**
+   * Lightweight headless orbital physics used when `document.hidden === true` (screen locked)
+   * so orbital meridian crossings continue to trigger notes without GPU canvas rendering.
+   */
+  private updateHeadlessOrbitalTriggers(dt: number): void {
+    const state = store.getState();
+    if (!state.isPlaying) return;
+
+    const { viscosity } = state.macros;
+    const viscositySpeedFactor = 1.0 - viscosity * 0.68;
+    const isoPaceMultiplier =
+      state.mode === 'practitioner' ? state.practitioner.isoOrbitalSpeedMultiplier : 1.0;
+    const meridianAngle = -Math.PI / 2;
+
+    for (const sat of state.satellites) {
+      const prevAngle = sat.angle;
+      const e = sat.eccentricity;
+      const rNorm =
+        (sat.semiMajorAxis * (1 - e * e)) /
+        (1 + e * Math.cos(sat.angle - sat.argumentOfPeriapsis));
+      const baseAngularVel = 0.22 / Math.pow(Math.max(0.14, rNorm), 1.42);
+      const dTheta = baseAngularVel * viscositySpeedFactor * isoPaceMultiplier * dt;
+
+      let nextAngle = prevAngle + dTheta;
+
+      if (prevAngle < meridianAngle && nextAngle >= meridianAngle) {
+        store.emitSatelliteTrigger(sat);
+      }
+
+      if (nextAngle > Math.PI) {
+        nextAngle -= Math.PI * 2;
+      }
+      sat.angle = nextAngle;
+    }
+  }
+
   private startLoop(): void {
     const tick = (now: number): void => {
+      if (document.hidden) {
+        this.animationFrameId = null;
+        return;
+      }
       const dt = Math.min(0.05, Math.max(0.001, (now - this.lastFrameTime) * 0.001));
       this.lastFrameTime = now;
 
@@ -561,7 +740,12 @@ export class SanctuaryCanvas {
       window.cancelAnimationFrame(this.animationFrameId);
       this.animationFrameId = null;
     }
+    if (this.backgroundPhysicsIntervalId !== null) {
+      window.clearInterval(this.backgroundPhysicsIntervalId);
+      this.backgroundPhysicsIntervalId = null;
+    }
     window.removeEventListener('resize', this.handleResize);
+    document.removeEventListener('visibilitychange', this.handleVisibilityChange);
   }
 
   private updatePhysics(dt: number, now: number): void {
@@ -1638,13 +1822,16 @@ export class SanctuaryCanvas {
   }
 
   private renderCanvasLegend(satelliteCount: number): void {
+    if (this.isPocketMode) {
+      return;
+    }
     this.ctx.save();
     this.ctx.fillStyle = 'rgba(148, 163, 184, 0.46)';
     this.ctx.font = '400 11px Inter, sans-serif';
     this.ctx.textAlign = 'left';
     const legendY = this.height - 152;
     this.ctx.fillText(
-      `Click space to spawn satellite (${satelliteCount}/${MAX_SATELLITES})  ·  Drag node: Inner (Oct 4-5) ↔ Mid (Oct 3-4) ↔ Outer (Oct 2-3)  ·  Right-click or hold node to dissolve`,
+      `Click space to spawn satellite (${satelliteCount}/${this.maxSatellites})  ·  Drag node: Inner (Oct 4-5) ↔ Mid (Oct 3-4) ↔ Outer (Oct 2-3)  ·  Right-click, double-tap, or hold node to dissolve`,
       24,
       legendY
     );

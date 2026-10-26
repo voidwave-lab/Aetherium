@@ -621,3 +621,24 @@ Program, unless a warranty or assumption of liability accompanies a
 copy of the Program in return for a fee.
 
                      END OF TERMS AND CONDITIONS
+
+========================================================================
+ADDITIONAL PERMISSION UNDER GNU GPL VERSION 3 SECTION 7:
+APPLE APP STORE & MOBILE APPLICATION STORE DISTRIBUTION EXCEPTION
+========================================================================
+
+As a special exception under Section 7 of the GNU General Public License
+version 3 ("GPLv3"), the copyright holders of Aetherium (voidwave-lab and
+contributors) grant you additional permission to convey, distribute, and
+propagate object code or executable binary versions of this Program through
+the Apple App Store, Apple TestFlight, Google Play Store, F-Droid, or
+similar mobile application distribution platforms, even when such platform
+applies digital locks, DRM, or Terms of Service that would otherwise
+conflict with Section 6 or Section 10 of GPLv3, provided that:
+
+  1. You comply with all other terms and conditions of GPLv3, including
+     making the Complete Corresponding Source Code publicly and freely
+     available under GPLv3 (or any later version); and
+  2. You do not add any proprietary, closed-source, paywalled, or
+     telemetry/tracking modules to the Program when distributing it.
+
