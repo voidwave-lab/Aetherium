@@ -1,3 +1,22 @@
+/**
+ * Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
+ * Copyright (C) 2026 Voidwave Lab
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
 import { AudioEngine } from '../audio/AudioEngine';
 import { OperatingMode, store } from '../state/store';
 
@@ -111,9 +130,12 @@ export class OnboardingModal {
           </button>
         </div>
 
-        <!-- Subtle footer note -->
-        <div class="mt-7 text-center text-[11px] text-slate-500 font-mono">
-          Keplerian Harmonic Engine · Zero-Telemetry Local Execution · Press ESC to dismiss
+        <!-- Subtle footer note & GPLv3 Appropriate Legal Notice -->
+        <div class="mt-7 text-center text-[11px] text-slate-500 font-mono space-y-1">
+          <div>Keplerian Harmonic Engine · Zero-Telemetry Local Execution · Press ESC to dismiss</div>
+          <div class="text-[10px] text-slate-600">
+            Copyright (C) 2026 Voidwave Lab · Free Software under GNU GPL v3.0 (No Warranty)
+          </div>
         </div>
       </div>
     `;

@@ -55,7 +55,7 @@
     "bundle": {
       "active": true,
       "category": "Music",
-      "copyright": "Copyright (c) 2026 Voidwave Lab. Open Source MIT License.",
+      "copyright": "Copyright (C) 2026 Voidwave Lab. Licensed under the GNU General Public License v3.0 (GPL-3.0-or-later).",
       "deb": {
         "depends": []
       },

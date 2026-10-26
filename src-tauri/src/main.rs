@@ -1,3 +1,20 @@
+// Aetherium — Generative Ambient Soundscape & Receptive Music Therapy Sanctuary
+// Copyright (C) 2026 Voidwave Lab
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
+// This program is free software: you can redistribute it and/or modify
+// it under the terms of the GNU General Public License as published by
+// the Free Software Foundation, either version 3 of the License, or
+// (at your option) any later version.
+//
+// This program is distributed in the hope that it will be useful,
+// but WITHOUT ANY WARRANTY; without even the implied warranty of
+// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+// GNU General Public License for more details.
+//
+// You should have received a copy of the GNU General Public License
+// along with this program. If not, see <https://www.gnu.org/licenses/>.
+
 // Prevents additional console window on Windows in release, DO NOT REMOVE!!
 #![cfg_attr(not(debug_assertions), windows_subsystem = "windows")]
 
@@ -27,6 +44,8 @@ pub struct MacroParamsPayload {
     pub viscosity: f64,
     pub nostalgia: f64,
     pub rarity: f64,
+    #[serde(default)]
+    pub serendipity: f64,
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -429,4 +429,8 @@ Aetherium/
 
 ## Licență
 
-Distribuit sub **Licența MIT**. Dezvoltat cu grijă de **Voidwave Lab**.
+Copyright (C) 2026 **Voidwave Lab**.
+
+Acest program este software liber: îl puteți redistribui și/sau modifica în conformitate cu termenii **Licenței Publice Generale GNU (GNU General Public License)** publicate de Free Software Foundation, fie **versiunea 3** a Licenței, fie (la alegerea dumneavoastră) orice versiune ulterioară (`GPL-3.0-or-later`).
+
+Consultați fișierul [`LICENSE`](./LICENSE) pentru textul integral al licenței.
