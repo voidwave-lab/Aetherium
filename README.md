@@ -2,6 +2,8 @@
 
 **Unified Multi-Platform Generative Ambient Soundscape & Receptive Music Therapy Sanctuary (`voidwave-lab`)**
 
+[![Release Aetherium Multi-Platform Binaries (Desktop & Android APK)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml/badge.svg)](https://github.com/voidwave-lab/Aetherium/actions/workflows/release.yml)
+
 [![License: GPL v3](https://img.shields.io/badge/License-GPLv3%2B-emerald.svg)](./LICENSE)
 [![Transparency: Zero-Profit Pledge](https://img.shields.io/badge/Transparency-Zero--Profit%20Ledger-teal.svg)](./TRANSPARENCY.md)
 [![Privacy: 100% Offline & Zero Telemetry](https://img.shields.io/badge/Privacy-100%25%20Offline%20%7C%20Zero%20Telemetry-indigo.svg)](#part-iv-ethics-open-source-credits-academic-bibliography--gnu-gpl-v30-license)
