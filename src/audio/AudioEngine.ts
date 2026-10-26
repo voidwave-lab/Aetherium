@@ -23,6 +23,14 @@ const VOWEL_OOO_FORMANTS: readonly [number, number, number] = [450, 800, 2830];
 const VOWEL_AHH_FORMANTS: readonly [number, number, number] = [700, 1220, 2600];
 
 /**
+ * Guards Web Audio parameters against NaN or Infinity which would permanently poison
+ * recursive BiquadFilterNode / ConvolverNode IIR state registers.
+ */
+function safeFinite(val: number, fallback: number): number {
+  return Number.isFinite(val) ? val : fallback;
+}
+
+/**
  * Generates a smooth hyperbolic tangent (tanh) soft-clipping curve
  * for analog midrange warmth saturation (Nostalgia macro).
  */
@@ -81,6 +89,8 @@ function resolveSomaticSubBassHz(seedId: SeedId): number {
  */
 export class AudioEngine {
   private isInitialized = false;
+  private isStarting = false;
+  private userExplicitlyMuted = false;
   private activeSeedId: SeedId | null = null;
   private activeHarmonicZoneId: HarmonicZoneId | null = null;
   private activeDroneNotes: string[] = [];
@@ -95,7 +105,7 @@ export class AudioEngine {
   // Macro DSP Processing Bus (Fog, Nostalgia, Luminance)
   private fogMasterLowpass: Tone.Filter | null = null;
   private masterReverb: Tone.Reverb | null = null;
-  private longTailReverb: Tone.Freeverb | null = null;
+  private longTailDiffuser: Tone.FeedbackDelay | null = null;
   private pingPongDelay: Tone.PingPongDelay | null = null;
   private nostalgiaTapeDelay: Tone.Delay | null = null;
   private wowFlutterLfo: Tone.LFO | null = null;
@@ -151,9 +161,9 @@ export class AudioEngine {
   private choirFormantBusGain: Tone.Gain | null = null;
   private formantMorphPhase = 0;
 
-  // Extension Engine 4: "Bowed Glass & Strings" (3.0s Bowed Saw/Triangle + Karplus-Strong + Woody Body Bank + 4.5Hz Vibrato)
+  // Extension Engine 4: "Bowed Glass & Strings" (3.0s Bowed Saw/Triangle + Plucked String + Woody Body Bank + 4.5Hz Vibrato)
   private bowedStringSynth: Tone.PolySynth<Tone.AMSynth> | null = null;
-  private karplusPluckSynth: Tone.PluckSynth | null = null;
+  private karplusPluckSynth: Tone.PolySynth<Tone.FMSynth> | null = null;
   private woodyBodyFilters: [Tone.Filter, Tone.Filter, Tone.Filter] | null = null;
   private bowedVibrato: Tone.Vibrato | null = null;
   private bowedStringsBusGain: Tone.Gain | null = null;
@@ -212,43 +222,88 @@ export class AudioEngine {
   public async togglePlayback(): Promise<void> {
     const { isPlaying } = store.getState();
     if (!isPlaying) {
+      this.userExplicitlyMuted = false;
       await this.start();
     } else {
+      this.userExplicitlyMuted = true;
       this.stop();
     }
   }
 
+  /**
+   * Automatically awakens the Web Audio context and sanctuary soundscape on the user's
+   * first interaction gesture (choosing a space in Onboarding, selecting a Seed, or
+   * interacting with the Orbital Canvas), unless the user has explicitly muted playback.
+   */
+  public ensureStartedFromGesture(): void {
+    if (this.userExplicitlyMuted || store.getState().isPlaying || this.isStarting) {
+      return;
+    }
+    void this.start();
+  }
+
   public async start(): Promise<void> {
-    await Tone.start();
-    if (Tone.getContext().state !== 'running') {
-      await Tone.getContext().resume();
-    }
+    if (this.isStarting) return;
+    this.isStarting = true;
 
-    if (!this.isInitialized) {
-      await this.initializeDspGraph();
-      this.isInitialized = true;
-    }
+    try {
+      const rawCtx = Tone.getContext().rawContext as AudioContext;
+      if (rawCtx && rawCtx.state !== 'running') {
+        void rawCtx.resume();
+      }
 
+      if (!this.isInitialized) {
+        this.initializeDspGraph();
+        this.isInitialized = true;
+      }
+
+      await Tone.start();
+      if (Tone.getContext().state !== 'running') {
+        await Tone.getContext().resume();
+      }
+
+      const state = store.getState();
+      this.syncWithState(state);
+      this.startContinuousGenerators();
+      this.updateDroneHarmony(state.activeSeedId, state.macros.luminance, true);
+
+      if (this.masterGain) {
+        const now = Tone.now();
+        const targetVol = safeFinite(state.masterVolume, 0.8);
+        this.masterGain.gain.cancelScheduledValues(now);
+        this.masterGain.gain.setValueAtTime(
+          Math.max(0.02, safeFinite(this.masterGain.gain.value, 0.02)),
+          now
+        );
+        this.masterGain.gain.rampTo(targetVol, 0.65);
+      }
+
+      store.setPlaying(true);
+      this.playWelcomeBloom();
+    } finally {
+      this.isStarting = false;
+    }
+  }
+
+  /**
+   * Plays a gentle harmonic welcome bloom on the active Seed engine so the listener
+   * receives immediate, unmistakable acoustic confirmation while the deep Core Drone swells in.
+   */
+  public playWelcomeBloom(): void {
     const state = store.getState();
-    this.updateDroneHarmony(state.activeSeedId, state.macros.luminance, true);
-    this.startContinuousGenerators();
-    this.syncWithState(state);
+    if (!this.isInitialized || !state.isPlaying) return;
 
-    if (this.masterGain) {
-      const now = Tone.now();
-      this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.setValueAtTime(Math.max(0.0001, this.masterGain.gain.value), now);
-      this.masterGain.gain.rampTo(state.masterVolume, 1.8);
+    const firstSat = state.satellites[0];
+    if (firstSat) {
+      store.emitSatelliteTrigger(firstSat);
     }
-
-    store.setPlaying(true);
   }
 
   public stop(): void {
     if (this.masterGain) {
       const now = Tone.now();
       this.masterGain.gain.cancelScheduledValues(now);
-      this.masterGain.gain.rampTo(0.0001, 1.2);
+      this.masterGain.gain.rampTo(0.0001, 1.0);
     }
 
     window.setTimeout(() => {
@@ -260,6 +315,7 @@ export class AudioEngine {
         this.rhodesSynth?.releaseAll();
         this.choirSynth?.releaseAll();
         this.bowedStringSynth?.releaseAll();
+        this.karplusPluckSynth?.releaseAll();
         for (const bowlSynth of this.bowlModalSynths) {
           bowlSynth.releaseAll();
         }
@@ -267,12 +323,12 @@ export class AudioEngine {
         this.activeSeedId = null;
         this.activeHarmonicZoneId = null;
       }
-    }, 1250);
+    }, 1050);
 
     store.setPlaying(false);
   }
 
-  private async initializeDspGraph(): Promise<void> {
+  private initializeDspGraph(): void {
     const state = store.getState();
     const { luminance, fog, viscosity, nostalgia } = state.macros;
     const prac = state.practitioner;
@@ -280,19 +336,19 @@ export class AudioEngine {
     // 1. Master Safety Limiter (-1.0 dBFS) & Glue Compressor
     this.masterLimiter = new Tone.Limiter(-1.0).toDestination();
     this.masterCompressor = new Tone.Compressor({
-      threshold: -15,
-      ratio: 3.2,
-      attack: 0.025,
-      release: 0.28,
+      threshold: -16,
+      ratio: 3.0,
+      attack: 0.02,
+      release: 0.25,
       knee: 10,
     }).connect(this.masterLimiter);
 
-    this.masterGain = new Tone.Gain(0.0001).connect(this.masterCompressor);
+    this.masterGain = new Tone.Gain(0.02).connect(this.masterCompressor);
 
     // Clinical Tool 1: Vocal-Range Acoustic Carving Filter (centered at 1100 Hz, Q = 0.7, 0 to -12 dB)
     const initialCarveDb =
       state.mode === 'practitioner' && prac.vocalCarvingEnabled
-        ? prac.vocalCarvingDepthDb
+        ? safeFinite(prac.vocalCarvingDepthDb, -6)
         : 0;
 
     this.vocalCarvingEq = new Tone.Filter({
@@ -310,27 +366,33 @@ export class AudioEngine {
       Q: 0.7,
     }).connect(this.vocalCarvingEq);
 
-    // 3. Fog Lush Stereo Reverb + Long-Tail Space Network (2s to 18s effective decay)
+    // 3. Fog Lush Stereo Reverb + Native Long-Tail Stereo Diffuser (Zero AudioWorklet dependency)
     this.masterReverb = new Tone.Reverb({
-      decay: 11.5,
-      preDelay: 0.08,
+      decay: 5.5,
+      preDelay: 0.045,
       wet: this.computeReverbWet(fog),
     }).connect(this.fogMasterLowpass);
-    await this.masterReverb.generate();
+    void this.masterReverb.ready.catch(() => {
+      // If OfflineAudioContext fails in restricted webviews, fall back cleanly to dry + diffuser
+      if (this.masterReverb) {
+        this.masterReverb.wet.value = 0;
+      }
+    });
 
-    this.longTailReverb = new Tone.Freeverb({
-      roomSize: this.computeFreeverbRoomSize(fog),
-      dampening: 1800 + (1 - fog) * 4200,
-      wet: 0.15 + fog * 0.55,
+    this.longTailDiffuser = new Tone.FeedbackDelay({
+      delayTime: 0.185,
+      maxDelay: 1.0,
+      feedback: this.computeFreeverbRoomSize(fog) * 0.65,
+      wet: 0.14 + fog * 0.42,
     }).connect(this.masterReverb);
 
     // 4. Stereo Ping-Pong Delay (feedback & wet controlled by Fog & Viscosity)
     this.pingPongDelay = new Tone.PingPongDelay({
-      delayTime: '4n.',
-      maxDelay: 2.0,
+      delayTime: 0.34,
+      maxDelay: 1.5,
       feedback: this.computePingPongFeedback(fog, viscosity),
       wet: 0.12 + fog * 0.34,
-    }).connect(this.longTailReverb);
+    }).connect(this.longTailDiffuser);
 
     // 5. Nostalgia Analog Tape Wow & Flutter Pitch Drift (0.8 Hz sine LFO modulating delay time)
     this.nostalgiaTapeDelay = new Tone.Delay({
@@ -443,12 +505,12 @@ export class AudioEngine {
         spread: 24,
       },
       envelope: {
-        attack: 4.2,
+        attack: 1.6,
         decay: 2.5,
-        sustain: 0.88,
+        sustain: 0.9,
         release: 6.5,
       },
-      volume: -17,
+      volume: -12,
     }).connect(this.droneFilter);
 
     this.droneSubSynth = new Tone.Synth({
@@ -456,19 +518,19 @@ export class AudioEngine {
         type: 'sine',
       },
       envelope: {
-        attack: 4.8,
+        attack: 2.0,
         decay: 2.0,
         sustain: 0.92,
         release: 7.0,
       },
-      volume: -22,
+      volume: -16,
     }).connect(this.droneFilter);
 
     // =========================================================================
     // LAYER B (1 & 2): STANDARD VOICES (Felt Piano FM & Glassy Space Pad)
     // =========================================================================
-    this.feltVoiceGain = new Tone.Gain(0.8).connect(this.bilateralPanner);
-    this.glassyVoiceGain = new Tone.Gain(0.3).connect(this.bilateralPanner);
+    this.feltVoiceGain = new Tone.Gain(0.85).connect(this.bilateralPanner);
+    this.glassyVoiceGain = new Tone.Gain(0.4).connect(this.bilateralPanner);
 
     this.feltPianoSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 2.0,
@@ -487,7 +549,7 @@ export class AudioEngine {
         sustain: 0.02,
         release: 0.6,
       },
-      volume: -10,
+      volume: -7,
     }).connect(this.feltVoiceGain);
 
     this.glassyPadSynth = new Tone.PolySynth(Tone.AMSynth, {
@@ -510,7 +572,7 @@ export class AudioEngine {
         sustain: 0.7,
         release: 3.5 + viscosity * 3.0,
       },
-      volume: -11,
+      volume: -8,
     }).connect(this.glassyVoiceGain);
 
     // =========================================================================
@@ -696,13 +758,25 @@ export class AudioEngine {
     this.bowedStringSynth.connect(bodyMid);
     this.bowedStringSynth.connect(bodyHigh);
 
-    // Sympathetic Karplus-Strong string resonance layer
-    this.karplusPluckSynth = new Tone.PluckSynth({
-      attackNoise: 0.35,
-      dampening: 2200,
-      resonance: 0.96,
-      release: 3.5,
-      volume: -14,
+    // Sympathetic plucked-string resonance layer (100% native Web Audio FM string model, zero AudioWorklet)
+    this.karplusPluckSynth = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 3.01,
+      modulationIndex: 3.2,
+      oscillator: { type: 'triangle' },
+      modulation: { type: 'sine' },
+      envelope: {
+        attack: 0.004,
+        decay: 1.45,
+        sustain: 0.0,
+        release: 2.4,
+      },
+      modulationEnvelope: {
+        attack: 0.002,
+        decay: 0.18,
+        sustain: 0.0,
+        release: 0.35,
+      },
+      volume: -11,
     });
     this.karplusPluckSynth.connect(bodyLow);
     this.karplusPluckSynth.connect(bodyMid);
@@ -711,7 +785,7 @@ export class AudioEngine {
     // LAYER C: ORGANIC TEXTURE GENERATOR (Brown/Pink Noise + Slow Bandpass LFO)
     // =========================================================================
     this.textureOutputGain = new Tone.Gain(
-      this.computeTextureNoiseGain(nostalgia, fog)
+      this.computeTextureNoiseGain(state.activeSeedId, nostalgia, fog)
     ).connect(this.fogMasterLowpass);
 
     this.textureBandpass = new Tone.Filter({
@@ -994,8 +1068,10 @@ export class AudioEngine {
     nostalgia: number,
     fog: number
   ): number {
+    const n = safeFinite(nostalgia, 0.35);
+    const f = safeFinite(fog, 0.5);
     const vinylBoost = seedId === 'midnight-vinyl' ? 0.018 : 0.0;
-    return 0.006 + nostalgia * 0.042 + fog * 0.016 + vinylBoost;
+    return safeFinite(0.006 + n * 0.042 + f * 0.016 + vinylBoost, 0.02);
   }
 
   private updateDroneHarmony(seedId: SeedId, luminance: number, force = false): void {
@@ -1009,6 +1085,7 @@ export class AudioEngine {
       return;
     }
 
+    const hadPreviousSeed = this.activeSeedId !== null;
     this.activeSeedId = seedId;
     this.activeHarmonicZoneId = zone.id;
 
@@ -1016,14 +1093,14 @@ export class AudioEngine {
     if (this.activeDroneNotes.length > 0) {
       this.dronePadSynth.releaseAll(now);
     }
-    this.dronePadSynth.triggerAttack(zone.droneVoicing, now + 0.05, 0.34);
+    this.dronePadSynth.triggerAttack(zone.droneVoicing, now + 0.05, 0.45);
     this.activeDroneNotes = [...zone.droneVoicing];
 
     if (this.activeSubNote !== zone.subFundamental) {
       if (this.activeSubNote) {
         this.droneSubSynth.triggerRelease(now);
       }
-      this.droneSubSynth.triggerAttack(zone.subFundamental, now + 0.05, 0.5);
+      this.droneSubSynth.triggerAttack(zone.subFundamental, now + 0.05, 0.58);
       this.activeSubNote = zone.subFundamental;
     }
 
@@ -1034,6 +1111,13 @@ export class AudioEngine {
       const pulseNote = `${zone.rootNote}3`;
       const pulseFreq = Tone.Frequency(pulseNote).toFrequency();
       this.emdrPulseOsc.frequency.rampTo(pulseFreq, RAMP_TIME_SEC);
+    }
+
+    // When the user switches Seed presets while playing, chime the first satellite gently
+    if (hadPreviousSeed && seedChanged && !force) {
+      window.setTimeout(() => {
+        this.playWelcomeBloom();
+      }, 60);
     }
   }
 
@@ -1060,10 +1144,12 @@ export class AudioEngine {
       this.masterReverb.wet.rampTo(this.computeReverbWet(fog), RAMP_TIME_SEC);
     }
 
-    if (this.longTailReverb) {
-      this.longTailReverb.roomSize.rampTo(this.computeFreeverbRoomSize(fog), RAMP_TIME_SEC);
-      this.longTailReverb.dampening = 1800 + (1 - fog) * 4200;
-      this.longTailReverb.wet.rampTo(0.15 + fog * 0.55, RAMP_TIME_SEC);
+    if (this.longTailDiffuser) {
+      this.longTailDiffuser.feedback.rampTo(
+        this.computeFreeverbRoomSize(fog) * 0.65,
+        RAMP_TIME_SEC
+      );
+      this.longTailDiffuser.wet.rampTo(0.14 + fog * 0.42, RAMP_TIME_SEC);
     }
 
     if (this.pingPongDelay) {
@@ -1333,17 +1419,22 @@ export class AudioEngine {
     }
 
     if (timbre === 'bowed-strings') {
-      // 4. Bowed Glass & Strings: 3.0s Bowed Saw/Triangle Swell + Karplus-Strong Sympathetic String
+      // 4. Bowed Glass & Strings: 3.0s Bowed Saw/Triangle Swell + Sympathetic Plucked String
       if (this.bowedStringSynth) {
         this.bowedStringSynth.triggerAttackRelease(
           payload.note,
           3.8 + viscosity * 4.5,
           now,
-          payload.velocity * 0.64
+          payload.velocity * 0.68
         );
       }
       if (this.karplusPluckSynth) {
-        this.karplusPluckSynth.triggerAttack(payload.note, now + 0.02);
+        this.karplusPluckSynth.triggerAttackRelease(
+          payload.note,
+          1.4,
+          now + 0.02,
+          payload.velocity * 0.52
+        );
       }
       return;
     }
@@ -1402,7 +1493,7 @@ export class AudioEngine {
     this.pinkNoise?.dispose();
     this.brownNoise?.dispose();
     this.masterReverb?.dispose();
-    this.longTailReverb?.dispose();
+    this.longTailDiffuser?.dispose();
     this.pingPongDelay?.dispose();
     this.masterCompressor?.dispose();
     this.masterLimiter?.dispose();

@@ -191,6 +191,7 @@ export class PoeticDock {
     seedButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
         const seedId = btn.getAttribute('data-seed-id') as SeedId;
+        this.audioEngine.ensureStartedFromGesture();
         store.selectSeed(seedId);
       });
     });

@@ -218,6 +218,8 @@ export class SanctuaryCanvas {
         return;
       }
 
+      this.audioEngine.ensureStartedFromGesture();
+
       const rect = this.canvas.getBoundingClientRect();
       const px = e.clientX - rect.left;
       const py = e.clientY - rect.top;

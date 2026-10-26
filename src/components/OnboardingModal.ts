@@ -1,9 +1,12 @@
+import { AudioEngine } from '../audio/AudioEngine';
 import { OperatingMode, store } from '../state/store';
 
 export class OnboardingModal {
   private root: HTMLElement;
+  private audioEngine: AudioEngine;
 
-  constructor(container: HTMLElement) {
+  constructor(container: HTMLElement, audioEngine: AudioEngine) {
+    this.audioEngine = audioEngine;
     this.root = document.createElement('div');
     this.root.id = 'aetherium-onboarding-modal';
     container.appendChild(this.root);
@@ -120,6 +123,7 @@ export class OnboardingModal {
       btn.addEventListener('click', () => {
         const selected = btn.getAttribute('data-mode-select') as OperatingMode;
         store.setMode(selected, true);
+        this.audioEngine.ensureStartedFromGesture();
       });
     });
 

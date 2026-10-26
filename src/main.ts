@@ -32,7 +32,7 @@ function bootstrapAetherium(): void {
   new TopBar(appContainer);
   const practitionerDock = new PractitionerDock(appContainer);
   new PoeticDock(appContainer, audioEngine);
-  new OnboardingModal(appContainer);
+  new OnboardingModal(appContainer, audioEngine);
 
   // Forward custom event to optional global callback handler if attached by external scripts/tests
   window.addEventListener('onSatelliteTrigger', (event: Event) => {
