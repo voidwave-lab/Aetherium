@@ -65,7 +65,15 @@ Conceput pentru o interacțiune tactilă pură, fără distrageri tehnice:
      - **Orbitele Exterioare (Departe de Nucleu):** Se deplasează lent și redau note profunde de violoncel și bas (Octavele 2–3).
    - **Modelarea și Dizolvarea Sateliților:** Trageți orice satelit mai aproape sau mai departe de Nucleu pentru a-i schimba registrul muzical; faceți **click-dreapta** (sau **țineți apăsat lung**) pe un satelit pentru a-l dizolva în particule.
 3. **Docul Poetic Inferior (Poetic Dock):**
-   - **Seeds (Semințe Sonore / Preseturi):** Alegeți între *Rain on Felt* (pian intim cu ciocănele de pâslă), *Deep Drift* (pad spațial vast în modul Lydian), *Subterranean* (dronă profundă, telurică) sau *Solar Wind* (consonanță caldă, luminoasă).
+   - **8 Semințe Sonore Procedurale (Seeds):**
+     - *Rain on Felt* (pian intim cu ciocănele de pâslă)
+     - *Deep Drift* (pad spațial vast în modul Lydian)
+     - *Subterranean* (dronă profundă, telurică)
+     - *Solar Wind* (consonanță caldă, luminoasă)
+     - *Midnight Vinyl* (atmosferă nocturnă Lo-Fi / Future Garage cu acorduri Rhodes FM filtrate sub `600 Hz`, sub-bas la `45–65 Hz` și micro-impulsuri stocastice de vinil/ploaie la `2.5 kHz`)
+     - *Singing Bowls* (boluri tibetane sintetizate modal prin 4 parțiale inarmonice `[1.0, 2.756, 5.404, 8.933]`, atac de `0.08s` și rezonanță de `14s`)
+     - *Cathedral Choir* (sinteză vocală formantică prin 3 filtre trece-bandă paralele ce morfează continuu între vocalele `'Ahh'` `[700, 1220, 2600 Hz]` și `'Ooo'` `[450, 800, 2830 Hz]`)
+     - *Bowed Glass & Strings* (coarde post-rock / cinematice cu atac lent de `3.0s`, rezonanță simpatică Karplus-Strong, banc de filtre pentru corpul de lemn și vibrato organic la `4.5 Hz`)
    - **Luminance (*Shadow ↔ Light / Umbră ↔ Lumină*):** Transformă treptat gama muzicală de la minor melancolic (*Aeolian / Phrygian*), trecând prin *Dorian* și *Major 9th*, până la deschiderea cosmică a modului *Lydian*, deschizând simultan strălucirea timbrală.
    - **Fog (*Clarity ↔ Mist / Claritate ↔ Ceață*):** Învăluie sunetul într-o reverberație amplă și atenuează frecvențele înalte într-o ceață difuză.
    - **Viscosity (*Crystalline ↔ Dense / Cristalin ↔ Dens*):** Încetinește viteza orbitală a sateliților, alungește urmele luminoase de pe ecran și transformă atacul notelor în creșteri lente și catifelate.
@@ -251,9 +259,13 @@ flowchart LR
    - **Fundația Pad:** `Tone.PolySynth(Tone.Synth)` configurat cu 3 oscilatoare dinte-de-fierăstrău detunate (`type: 'fatsawtooth'`, `spread: 24 cenți`) care redau acordul modal activ de 4 note.
    - **Ancora Sub-Fundamentală:** Oscilator `Tone.Synth` dedicat (`type: 'sine'`, atenuat la `-12 dB` față de pad) fixat pe fundamentala gravă (`C1`, `D1`, `F1`, `G1`).
    - **Modulația Respiratorie a Filtrului:** Ambele surse trec printr-un filtru trece-jos rezonant de `24 dB/oct` (`Q = 2.1`) a cărui frecvență de tăiere este modulată de un LFO sinusoidal foarte lent (`0.05 Hz` – `0.15 Hz`, ciclu respirator de 6,6 până la 20 secunde). Faza instantanee a acestui LFO este expusă prin `audioEngine.getBreathingModulation(timeSec)`, sincronizând pulsația vizuală a Nucleului cu respirația acustică.
-2. **Stratul B — Vocile cu Dublu Timbru ale Sateliților:**
-   - **Vocea 1 (Pian cu Pâslă / Ciupitură Intimă):** `Tone.FMSynth` polifonic (`harmonicity: 2.0`, `modulationIndex: 1.2 + 1.4 * luminance`, modulator triunghiular cu atenuare rapidă) ce redă atacul catifelat al ciocănelului de pâslă urmat de o rezonanță lemnoasă caldă (`attack: 0.015s – 0.28s`, `release: 1.8s – 6.5s`).
-   - **Vocea 2 (Pad Spațial Cristalin):** `Tone.AMSynth` polifonic (`harmonicity: 1.5`, purtătoare dublă `fatsine`) cu atac lent fără clic (`1.5s – 4.0s` scalat de `viscosity`) și eliberare lungă (`3.0s – 8.5s`).
+2. **Stratul B — 6 Motoare Procedurale pentru Vocile Sateliților:**
+   - **Motorul 1 (Pian cu Pâslă / Ciupitură Intimă):** `Tone.FMSynth` polifonic (`harmonicity: 2.0`, `modulationIndex: 1.2 + 1.4 * luminance`, modulator triunghiular cu atenuare rapidă) ce redă atacul catifelat al ciocănelului de pâslă urmat de o rezonanță lemnoasă caldă (`attack: 0.015s – 0.28s`, `release: 1.8s – 6.5s`).
+   - **Motorul 2 (Pad Spațial Cristalin):** `Tone.AMSynth` polifonic (`harmonicity: 1.5`, purtătoare dublă `fatsine`) cu atac lent fără clic (`1.5s – 4.0s` scalat de `viscosity`) și eliberare lungă (`3.0s – 8.5s`).
+   - **Motorul 3 (Midnight Vinyl — Nocturnal Lo-Fi / Future Garage):** Acorduri FM de tip Rhodes (`harmonicity: 1.0`) trecute printr-un filtru trece-jos de `24 dB/oct` (`< 600 Hz`), însoțite de o dronă sub-bas la `55 Hz` (`45–65 Hz`) și un generator stocastic de micro-impulsuri filtrate la `2.5 kHz` (`Q = 3.4`) pentru textura de vinil și ploaie nocturnă.
+   - **Motorul 4 (Singing Bowls — Sinteză Modală Inarmonică):** 4 bancuri paralele de oscilatoare sinusoidale acordate pe rapoartele modale metalice Euler-Bernoulli ($[1.000,\ 2.756,\ 5.404,\ 8.933] \times f_0$), cu atac de ciocănel de pâslă (`0.08s`) și dezintegrare rezonantă de `14.0s`.
+   - **Motorul 5 (Cathedral Choir — Sinteză Vocală Formantică):** Trece drona și vocile corale prin 3 filtre trece-bandă paralele cu factor $Q$ ridicat ($F_1, F_2, F_3$) care morfează continuu între vocala `'Ahh'` ($[700\text{ Hz},\ 1220\text{ Hz},\ 2600\text{ Hz}]$) și vocala `'Ooo'` ($[450\text{ Hz},\ 800\text{ Hz},\ 2830\text{ Hz}]$).
+   - **Motorul 6 (Bowed Glass & Strings — Post-Rock / Cinematic):** Combină coarde arcuite cu atac lent de `3.0s` (`fatsawtooth`/`triangle`) și modelare fizică Karplus-Strong (`Tone.PluckSynth`) trecute printr-un banc de rezonanță acustică a corpului de lemn ($250\text{ Hz}$, $520\text{ Hz}$, $1850\text{ Hz}$) cu vibrato organic la `4.5 Hz`.
 3. **Stratul C — Generatorul de Textură Organică:**
    - Generatoare procedurale `Tone.Noise('pink')` și `Tone.Noise('brown')` modelate de un filtru trece-bandă (`Q = 1.8`) baleiat continuu între `240 Hz` și `1,180 Hz` de un LFO la `0.065 Hz`, emulând ploaia îndepărtată pe pâslă, vântul prin pini sau căldura suprafeței de vinil.
 

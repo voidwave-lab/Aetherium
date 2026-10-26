@@ -53,6 +53,10 @@ const SEED_ORDER: SeedId[] = [
   'deep-drift',
   'subterranean',
   'solar-wind',
+  'midnight-vinyl',
+  'singing-bowls',
+  'cathedral-choir',
+  'bowed-glass-strings',
 ];
 
 const TIMER_DURATIONS: SleepTimerDuration[] = [0, 15, 30, 60];
@@ -65,7 +69,7 @@ export class PoeticDock {
     this.audioEngine = audioEngine;
     this.root = document.createElement('footer');
     this.root.className =
-      'fixed bottom-0 left-0 right-0 z-30 px-4 pb-4 pt-2 pointer-events-none flex justify-center';
+      'fixed bottom-0 left-0 right-0 z-30 px-4 pb-3.5 pt-2 pointer-events-none flex justify-center';
     container.appendChild(this.root);
 
     this.render();
@@ -83,8 +87,8 @@ export class PoeticDock {
         <button
           type="button"
           data-seed-id="${preset.id}"
-          title="${preset.description}"
-          class="px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 border"
+          title="${preset.subtitle} — ${preset.description}"
+          class="px-3 py-1 rounded-full text-[11px] font-medium transition-all duration-200 border whitespace-nowrap"
         >
           ${preset.name}
         </button>
@@ -120,19 +124,19 @@ export class PoeticDock {
     }).join('');
 
     this.root.innerHTML = `
-      <div class="pointer-events-auto glass-panel w-full max-w-6xl rounded-2xl px-5 py-3.5 flex flex-col gap-3">
-        <!-- Top Row: Seed Selector Pills + Master Audio & Sleep Timer Controls -->
-        <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-800/80 pb-2.5">
+      <div class="pointer-events-auto glass-panel w-full max-w-6xl rounded-2xl px-5 py-3 flex flex-col gap-2.5">
+        <!-- Top Row: 8 Procedural Seed Selector Pills + Master Audio & Sleep Timer Controls -->
+        <div class="flex flex-wrap items-center justify-between gap-2.5 border-b border-slate-800/80 pb-2">
           <!-- Seed Presets -->
           <div class="flex flex-wrap items-center gap-1.5" role="group" aria-label="Poetic Seed Presets">
-            <span class="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 mr-1.5">
+            <span class="text-[10px] font-mono uppercase tracking-[0.18em] text-slate-400 mr-1">
               Seeds
             </span>
             ${seedPillsHtml}
           </div>
 
           <!-- Transport & Crescent Sleep Timer -->
-          <div class="flex items-center gap-2.5">
+          <div class="flex items-center gap-2 shrink-0">
             <!-- Crescent Moon Fade-to-Silence Timer -->
             <div class="flex items-center gap-1 bg-slate-900/75 border border-slate-800/90 rounded-full px-2.5 py-1">
               <svg
@@ -183,7 +187,6 @@ export class PoeticDock {
   }
 
   private bindEvents(): void {
-    // Seed preset selection pills
     const seedButtons = this.root.querySelectorAll<HTMLButtonElement>('[data-seed-id]');
     seedButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -192,7 +195,6 @@ export class PoeticDock {
       });
     });
 
-    // Macro sliders
     const sliders = this.root.querySelectorAll<HTMLInputElement>('[data-macro-slider]');
     sliders.forEach((slider) => {
       slider.addEventListener('input', () => {
@@ -202,7 +204,6 @@ export class PoeticDock {
       });
     });
 
-    // Sleep timer buttons
     const sleepButtons = this.root.querySelectorAll<HTMLButtonElement>('[data-sleep-mins]');
     sleepButtons.forEach((btn) => {
       btn.addEventListener('click', () => {
@@ -211,7 +212,6 @@ export class PoeticDock {
       });
     });
 
-    // Master Play/Mute button
     const masterAudioBtn = this.root.querySelector('#btn-master-audio');
     masterAudioBtn?.addEventListener('click', () => {
       void this.audioEngine.togglePlayback();
@@ -225,20 +225,18 @@ export class PoeticDock {
   }
 
   private syncState(state: AetheriumState): void {
-    // Sync active seed pill styling
     const seedButtons = this.root.querySelectorAll<HTMLButtonElement>('[data-seed-id]');
     seedButtons.forEach((btn) => {
       const id = btn.getAttribute('data-seed-id');
       if (id === state.activeSeedId) {
         btn.className =
-          'px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-indigo-500/25 text-indigo-100 border border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.25)]';
+          'px-3 py-1 rounded-full text-[11px] font-medium transition-all duration-200 bg-indigo-500/25 text-indigo-100 border border-indigo-400/50 shadow-[0_0_15px_rgba(99,102,241,0.25)] whitespace-nowrap';
       } else {
         btn.className =
-          'px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 bg-slate-900/55 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700';
+          'px-3 py-1 rounded-full text-[11px] font-medium transition-all duration-200 bg-slate-900/55 text-slate-400 border border-slate-800 hover:text-slate-200 hover:border-slate-700 whitespace-nowrap';
       }
     });
 
-    // Sync Macro Sliders & Percentage Readouts
     for (const ctrl of MACRO_CONTROLS) {
       const val = state.macros[ctrl.key];
       const slider = this.root.querySelector<HTMLInputElement>(
@@ -253,7 +251,6 @@ export class PoeticDock {
       }
     }
 
-    // Sync Sleep Timer Buttons & Countdown
     const sleepButtons = this.root.querySelectorAll<HTMLButtonElement>('[data-sleep-mins]');
     sleepButtons.forEach((btn) => {
       const mins = Number(btn.getAttribute('data-sleep-mins'));
@@ -276,7 +273,6 @@ export class PoeticDock {
       }
     }
 
-    // Sync Master Play/Mute Button
     const masterBtn = this.root.querySelector('#btn-master-audio');
     const iconEl = this.root.querySelector('#master-audio-icon');
     const labelEl = this.root.querySelector('#master-audio-label');

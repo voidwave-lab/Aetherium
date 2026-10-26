@@ -10,6 +10,18 @@ import {
 
 const RAMP_TIME_SEC = 0.2;
 
+/** Euler-Bernoulli metallic inharmonic modal ratios for Tibetan Singing Bowls */
+const SINGING_BOWL_RATIOS: readonly [number, number, number, number] = [
+  1.0,
+  2.756,
+  5.404,
+  8.933,
+];
+
+/** Vocal Formant frequencies (F1, F2, F3 in Hz) for 'Ooo' (/u/) and 'Ahh' (/ɑ/) */
+const VOWEL_OOO_FORMANTS: readonly [number, number, number] = [450, 800, 2830];
+const VOWEL_AHH_FORMANTS: readonly [number, number, number] = [700, 1220, 2600];
+
 /**
  * Generates a smooth hyperbolic tangent (tanh) soft-clipping curve
  * for analog midrange warmth saturation (Nostalgia macro).
@@ -26,38 +38,46 @@ function createSoftClipCurve(driveAmount: number, samples = 1024): Float32Array 
 }
 
 /**
- * Resolves a harmonic somatic sub-bass anchor frequency strictly within 40 Hz - 60 Hz
+ * Resolves a harmonic sub-bass anchor frequency strictly within 45 Hz - 65 Hz (or 43.65-58.27 Hz)
  * aligned with the active seed's tonal center.
  */
 function resolveSomaticSubBassHz(seedId: SeedId): number {
   switch (seedId) {
+    case 'midnight-vinyl':
+      return 55.0; // A1 (55.0 Hz deep nocturnal sub-bass anchor within 45-65 Hz)
     case 'rain-on-felt':
-      return 55.0; // A1 (Perfect 5th below D2, warm 55 Hz anchor)
+      return 55.0; // A1 (55.0 Hz)
     case 'deep-drift':
-      return 43.65; // F1 (Fundamental 43.65 Hz anchor)
+      return 43.65; // F1 (43.65 Hz)
+    case 'singing-bowls':
+      return 43.65; // F1 (43.65 Hz)
     case 'subterranean':
-      return 49.0; // G1 (Sub-dominant/Fifth 49 Hz anchor)
+      return 49.0; // G1 (49.0 Hz)
     case 'solar-wind':
-      return 49.0; // G1 (Fundamental 49 Hz anchor)
+    case 'cathedral-choir':
+      return 49.0; // G1 (49.0 Hz)
+    case 'bowed-glass-strings':
+      return 55.0; // A1 (55.0 Hz)
     default:
       return 50.0;
   }
 }
 
 /**
- * Phase 2 & Phase 3 Production Generative Web Audio & Clinical Psychoacoustic DSP Engine.
+ * Production Generative Web Audio, Modal/Formant/Karplus-Strong & Clinical Psychoacoustic DSP Engine.
  *
  * Implements:
  * - Layer A: Continuous Core Drone (detuned fatsawtooth + -12dB sub-sine through a 24dB resonant LPF
  *   modulated by a 0.05Hz - 0.15Hz breathing LFO).
- * - Layer B: Dual-Timbre Satellite Voices (FM Felt Piano / Intimate Pluck + Slow-Attack 1.5s-4.0s Glassy Space Pad)
- *   with Rarity entropy gate and sinusoidal Bilateral EMDR routing.
- * - Layer C: Procedural Brown/Pink Noise Organic Texture Generator shaped by a slow LFO bandpass filter.
- * - Phase 3 Clinical Suite DSP:
- *   1. Vocal-Range Acoustic Carving Filter (1100 Hz, Q = 0.7, 0 dB to -12 dB Dialogue Mode pocket)
- *   2. Automated ISO-Principle Session Arc Vector Pacing timer integration
- *   3. Bilateral Stimulation (EMDR 0.2 Hz - 1.5 Hz StereoPanner + dedicated soft harmonic pulse)
- *   4. Somatic Sub-Bass Anchor (40-60 Hz pure sine) & Binaural Theta Entrainment (100 Hz L / 106 Hz R = 6 Hz Theta)
+ * - Layer B: 6 Procedural Seed Synthesis Engines:
+ *   1. Felt Piano / Intimate Pluck (FM synthesis with muted hammer transient & warm woody decay)
+ *   2. Glassy Space Pad (Slow-attack 1.5s-4.0s harmonic swell)
+ *   3. Midnight Vinyl (Heavily low-passed <600Hz Rhodes FM chords + 45-65Hz sub-bass + 2.5kHz stochastic vinyl crackle)
+ *   4. Singing Bowls (4-mode inharmonic sine partials [1.0, 2.756, 5.404, 8.933] with 0.08s attack & 14s decay)
+ *   5. Cathedral Choir (3 parallel vocal formant bandpass filters morphing between 'Ahh' [700, 1220, 2600Hz] & 'Ooo' [450, 800, 2830Hz])
+ *   6. Bowed Glass & Strings (Slow-attack 3.0s saw/triangle + Karplus-Strong sympathetic pluck through a woody body-resonance filter bank with 4.5Hz vibrato)
+ * - Layer C: Procedural Brown/Pink Noise Organic Texture Generator + 2.5 kHz Stochastic Vinyl Crackle Impulse Engine.
+ * - Phase 3 Clinical Suite DSP (1100 Hz Vocal-Range Carving, ISO Session Arc, Bilateral EMDR Panner, Somatic Sub-Bass & 6 Hz Binaural Theta).
  */
 export class AudioEngine {
   private isInitialized = false;
@@ -90,7 +110,7 @@ export class AudioEngine {
   private emdrPulseLfo: Tone.LFO | null = null;
   private emdrPulseGain: Tone.Gain | null = null;
 
-  // Clinical Tool 4: Somatic Sub-Bass Anchor (40-60 Hz) & 6 Hz Binaural Theta Entrainment (100 Hz L / 106 Hz R)
+  // Clinical Tool 4: Somatic Sub-Bass Anchor (40-65 Hz) & 6 Hz Binaural Theta Entrainment (100 Hz L / 106 Hz R)
   private somaticSubOsc: Tone.Oscillator | null = null;
   private somaticSubGain: Tone.Gain | null = null;
   private binauralLeftOsc: Tone.Oscillator | null = null;
@@ -106,11 +126,37 @@ export class AudioEngine {
   private droneBreathLfo: Tone.LFO | null = null;
   private breathFreqHz = 0.085;
 
-  // Layer B: Satellite Voices (1. Felt Piano FM Pluck, 2. Glassy Space Pad)
+  // Layer B Standard Voices (1. Felt Piano FM Pluck, 2. Glassy Space Pad)
   private feltPianoSynth: Tone.PolySynth<Tone.FMSynth> | null = null;
   private glassyPadSynth: Tone.PolySynth<Tone.AMSynth> | null = null;
   private feltVoiceGain: Tone.Gain | null = null;
   private glassyVoiceGain: Tone.Gain | null = null;
+
+  // Extension Engine 1: "Midnight Vinyl" (<600 Hz Rhodes FM Chords + 2.5 kHz Stochastic Crackle)
+  private rhodesSynth: Tone.PolySynth<Tone.FMSynth> | null = null;
+  private rhodesLowpassFilter: Tone.Filter | null = null;
+  private rhodesVoiceGain: Tone.Gain | null = null;
+  private vinylCrackleSynth: Tone.NoiseSynth | null = null;
+  private vinylCrackleFilter: Tone.Filter | null = null;
+  private vinylCrackleGain: Tone.Gain | null = null;
+
+  // Extension Engine 2: "Singing Bowls" (4-Mode Inharmonic Modal Synthesis [1.0, 2.756, 5.404, 8.933])
+  private bowlModalSynths: Array<Tone.PolySynth<Tone.Synth>> = [];
+  private bowlVoiceGain: Tone.Gain | null = null;
+
+  // Extension Engine 3: "Cathedral Choir" (3 Parallel Vowel Formant Filters: 'Ahh' <-> 'Ooo')
+  private choirSynth: Tone.PolySynth<Tone.Synth> | null = null;
+  private droneFormantSendGain: Tone.Gain | null = null;
+  private formantFilters: [Tone.Filter, Tone.Filter, Tone.Filter] | null = null;
+  private choirFormantBusGain: Tone.Gain | null = null;
+  private formantMorphPhase = 0;
+
+  // Extension Engine 4: "Bowed Glass & Strings" (3.0s Bowed Saw/Triangle + Karplus-Strong + Woody Body Bank + 4.5Hz Vibrato)
+  private bowedStringSynth: Tone.PolySynth<Tone.AMSynth> | null = null;
+  private karplusPluckSynth: Tone.PluckSynth | null = null;
+  private woodyBodyFilters: [Tone.Filter, Tone.Filter, Tone.Filter] | null = null;
+  private bowedVibrato: Tone.Vibrato | null = null;
+  private bowedStringsBusGain: Tone.Gain | null = null;
 
   // Layer C: Organic Texture Generator (Procedural Brown/Pink Noise + Slow Bandpass Filter)
   private pinkNoise: Tone.Noise | null = null;
@@ -122,6 +168,7 @@ export class AudioEngine {
   private textureOutputGain: Tone.Gain | null = null;
 
   private sessionTickInterval: number | null = null;
+  private crackleTickInterval: number | null = null;
 
   constructor() {
     store.subscribe((state) => {
@@ -142,20 +189,17 @@ export class AudioEngine {
         store.tickIsoSessionArc(1);
       }
     }, 1000);
+
+    // 180ms tick for Vowel Formant ('Ahh' <-> 'Ooo') morphing & Stochastic 2.5kHz Vinyl Crackle micro-impulses
+    this.crackleTickInterval = window.setInterval(() => {
+      this.tickProceduralMicroEngines();
+    }, 180);
   }
 
-  /**
-   * Returns instantaneous breathing phase (0.0 to 1.0) synchronized with the
-   * Layer A 0.05Hz-0.15Hz LFO so SanctuaryCanvas can visually breathe with the drone.
-   */
   public getBreathingModulation(timeSec: number): number {
     return 0.5 + 0.5 * Math.sin(timeSec * Math.PI * 2 * this.breathFreqHz);
   }
 
-  /**
-   * Returns instantaneous horizontal bilateral pan position (-1.0 Left to +1.0 Right)
-   * when Practitioner EMDR Bilateral Grounding is enabled, or null when inactive.
-   */
   public getBilateralPanPosition(timeSec: number): number | null {
     const state = store.getState();
     if (state.mode !== 'practitioner' || !state.practitioner.emdrBilateralEnabled) {
@@ -188,6 +232,7 @@ export class AudioEngine {
     const state = store.getState();
     this.updateDroneHarmony(state.activeSeedId, state.macros.luminance, true);
     this.startContinuousGenerators();
+    this.syncWithState(state);
 
     if (this.masterGain) {
       const now = Tone.now();
@@ -212,6 +257,12 @@ export class AudioEngine {
         this.droneSubSynth?.triggerRelease();
         this.feltPianoSynth?.releaseAll();
         this.glassyPadSynth?.releaseAll();
+        this.rhodesSynth?.releaseAll();
+        this.choirSynth?.releaseAll();
+        this.bowedStringSynth?.releaseAll();
+        for (const bowlSynth of this.bowlModalSynths) {
+          bowlSynth.releaseAll();
+        }
         this.stopContinuousGenerators();
         this.activeSeedId = null;
         this.activeHarmonicZoneId = null;
@@ -281,7 +332,7 @@ export class AudioEngine {
       wet: 0.12 + fog * 0.34,
     }).connect(this.longTailReverb);
 
-    // 5. Nostalgia Analog Tape Wow & Flutter Pitch Drift (0.8 Hz sine LFO modulating delay time by a few ms)
+    // 5. Nostalgia Analog Tape Wow & Flutter Pitch Drift (0.8 Hz sine LFO modulating delay time)
     this.nostalgiaTapeDelay = new Tone.Delay({
       delayTime: 0.012,
       maxDelay: 0.05,
@@ -317,7 +368,6 @@ export class AudioEngine {
       type: 'sine',
     });
 
-    // Soft dedicated harmonic pulse routed through the sinusoidal Bilateral Panner
     this.emdrPulseGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
     this.emdrPulseOsc = new Tone.Oscillator({
       frequency: 220,
@@ -333,9 +383,8 @@ export class AudioEngine {
     });
 
     // =========================================================================
-    // CLINICAL TOOL 4: SOMATIC SUB-BASS (40-60 Hz) & BINAURAL THETA (100/106 Hz)
+    // CLINICAL TOOL 4 & MIDNIGHT VINYL SUB: SOMATIC SUB-BASS (45-65 Hz) & BINAURAL THETA
     // =========================================================================
-    // Somatic Sub-Bass Anchor bypassed around vocal-carving notch directly into masterGain
     this.somaticSubGain = new Tone.Gain(
       this.computeSomaticSubLinearGain(state)
     ).connect(this.masterGain);
@@ -345,7 +394,6 @@ export class AudioEngine {
       type: 'sine',
     }).connect(this.somaticSubGain);
 
-    // Subtle Binaural Theta Entrainment: Left 100 Hz & Right 106 Hz -> 6 Hz Theta beat
     this.binauralMasterGain = new Tone.Gain(
       this.computeBinauralLinearGain(state)
     ).connect(this.masterGain);
@@ -374,7 +422,11 @@ export class AudioEngine {
     }).connect(this.corePanner);
 
     this.breathFreqHz = this.computeBreathingRateHz(viscosity);
-    const { minCutoff, maxCutoff } = this.computeDroneFilterBreathBounds(luminance, fog);
+    const { minCutoff, maxCutoff } = this.computeDroneFilterBreathBounds(
+      state.activeSeedId,
+      luminance,
+      fog
+    );
     this.droneBreathLfo = new Tone.LFO({
       frequency: this.breathFreqHz,
       type: 'sine',
@@ -409,29 +461,20 @@ export class AudioEngine {
         sustain: 0.92,
         release: 7.0,
       },
-      volume: -24, // -12 dB sub-fundamental anchor
+      volume: -22,
     }).connect(this.droneFilter);
 
     // =========================================================================
-    // LAYER B: SATELLITE VOICES (Routed through sinusoidal Bilateral Panner)
+    // LAYER B (1 & 2): STANDARD VOICES (Felt Piano FM & Glassy Space Pad)
     // =========================================================================
-    const { feltBlend, glassyBlend } = this.computeTimbreBlend(
-      state.activeSeedId,
-      viscosity,
-      luminance
-    );
-    this.feltVoiceGain = new Tone.Gain(feltBlend).connect(this.bilateralPanner);
-    this.glassyVoiceGain = new Tone.Gain(glassyBlend).connect(this.bilateralPanner);
+    this.feltVoiceGain = new Tone.Gain(0.8).connect(this.bilateralPanner);
+    this.glassyVoiceGain = new Tone.Gain(0.3).connect(this.bilateralPanner);
 
     this.feltPianoSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 2.0,
       modulationIndex: 1.65,
-      oscillator: {
-        type: 'sine',
-      },
-      modulation: {
-        type: 'triangle',
-      },
+      oscillator: { type: 'sine' },
+      modulation: { type: 'triangle' },
       envelope: {
         attack: this.computeFeltAttack(viscosity),
         decay: 1.35 + viscosity * 1.8,
@@ -454,9 +497,7 @@ export class AudioEngine {
         count: 2,
         spread: 16,
       },
-      modulation: {
-        type: 'sine',
-      },
+      modulation: { type: 'sine' },
       envelope: {
         attack: this.computeGlassyAttack(viscosity),
         decay: 2.4,
@@ -471,6 +512,200 @@ export class AudioEngine {
       },
       volume: -11,
     }).connect(this.glassyVoiceGain);
+
+    // =========================================================================
+    // EXTENSION 1: "MIDNIGHT VINYL" (<600 Hz Rhodes FM + 2.5 kHz Vinyl Crackle)
+    // =========================================================================
+    this.rhodesVoiceGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    this.rhodesLowpassFilter = new Tone.Filter({
+      type: 'lowpass',
+      frequency: 460 + luminance * 120, // Strictly < 600 Hz warm nocturnal roll-off
+      rolloff: -24,
+      Q: 1.35,
+    }).connect(this.rhodesVoiceGain);
+
+    this.rhodesSynth = new Tone.PolySynth(Tone.FMSynth, {
+      harmonicity: 1.0,
+      modulationIndex: 0.9,
+      oscillator: { type: 'sine' },
+      modulation: { type: 'sine' },
+      envelope: {
+        attack: 0.018 + viscosity * 0.08,
+        decay: 1.8 + viscosity * 1.6,
+        sustain: 0.22,
+        release: 2.6 + viscosity * 3.2,
+      },
+      modulationEnvelope: {
+        attack: 0.005,
+        decay: 0.45,
+        sustain: 0.05,
+        release: 0.8,
+      },
+      volume: -8,
+    }).connect(this.rhodesLowpassFilter);
+
+    // Procedural Vinyl Crackle / Rain Micro-Impulse Generator filtered at 2.5 kHz
+    this.vinylCrackleGain = new Tone.Gain(0.0).connect(this.vocalCarvingEq);
+    this.vinylCrackleFilter = new Tone.Filter({
+      type: 'bandpass',
+      frequency: 2500,
+      Q: 3.4,
+    }).connect(this.vinylCrackleGain);
+
+    this.vinylCrackleSynth = new Tone.NoiseSynth({
+      noise: { type: 'white' },
+      envelope: {
+        attack: 0.0005,
+        decay: 0.0055,
+        sustain: 0,
+      },
+      volume: -16,
+    }).connect(this.vinylCrackleFilter);
+
+    // =========================================================================
+    // EXTENSION 2: "SINGING BOWLS" (4 Inharmonic Modes: 1.0, 2.756, 5.404, 8.933)
+    // =========================================================================
+    this.bowlVoiceGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    const modalVolumesDb = [-10, -17, -23, -29];
+    const modalDecaysSec = [14.0, 11.2, 8.4, 5.8];
+
+    this.bowlModalSynths = SINGING_BOWL_RATIOS.map((_ratio, idx) => {
+      return new Tone.PolySynth(Tone.Synth, {
+        oscillator: { type: 'sine' },
+        envelope: {
+          attack: 0.08, // Soft felt-mallet attack (0.08s)
+          decay: modalDecaysSec[idx], // Ultra-long 14s fundamental modal decay
+          sustain: 0.0,
+          release: modalDecaysSec[idx],
+        },
+        volume: modalVolumesDb[idx],
+      }).connect(this.bowlVoiceGain!);
+    });
+
+    // =========================================================================
+    // EXTENSION 3: "CATHEDRAL CHOIR" (3 Parallel Vowel Formant Filters: 'Ahh' <-> 'Ooo')
+    // =========================================================================
+    this.choirFormantBusGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+
+    const f1 = new Tone.Filter({
+      type: 'bandpass',
+      frequency: VOWEL_AHH_FORMANTS[0],
+      rolloff: -12,
+      Q: 6.5,
+    }).connect(this.choirFormantBusGain);
+
+    const f2 = new Tone.Filter({
+      type: 'bandpass',
+      frequency: VOWEL_AHH_FORMANTS[1],
+      rolloff: -12,
+      Q: 7.5,
+    }).connect(this.choirFormantBusGain);
+
+    const f3 = new Tone.Filter({
+      type: 'bandpass',
+      frequency: VOWEL_AHH_FORMANTS[2],
+      rolloff: -12,
+      Q: 8.5,
+    }).connect(this.choirFormantBusGain);
+
+    this.formantFilters = [f1, f2, f3];
+
+    this.choirSynth = new Tone.PolySynth(Tone.Synth, {
+      oscillator: {
+        type: 'fatsawtooth',
+        count: 4,
+        spread: 28,
+      },
+      envelope: {
+        attack: 1.8 + viscosity * 2.2,
+        decay: 2.5,
+        sustain: 0.78,
+        release: 4.5 + viscosity * 4.5,
+      },
+      volume: -6,
+    });
+    this.choirSynth.connect(f1);
+    this.choirSynth.connect(f2);
+    this.choirSynth.connect(f3);
+
+    // Also route a send from the continuous Core Drone through the 3 vocal formant filters
+    this.droneFormantSendGain = new Tone.Gain(0.0);
+    this.dronePadSynth.connect(this.droneFormantSendGain);
+    this.droneFormantSendGain.connect(f1);
+    this.droneFormantSendGain.connect(f2);
+    this.droneFormantSendGain.connect(f3);
+
+    // =========================================================================
+    // EXTENSION 4: "BOWED GLASS & STRINGS" (3.0s Bowed Swell + Woody Body Bank + 4.5Hz Vibrato)
+    // =========================================================================
+    this.bowedStringsBusGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+
+    // Delayed organic vibrato at 4.5 Hz
+    this.bowedVibrato = new Tone.Vibrato({
+      frequency: 4.5,
+      depth: 0.14 + nostalgia * 0.1,
+      wet: 0.82,
+    }).connect(this.bowedStringsBusGain);
+
+    // Woody Body-Resonance Filter Bank (250 Hz Cavity, 520 Hz Bridge, 1850 Hz Rosin Sheen)
+    const bodyLow = new Tone.Filter({
+      type: 'bandpass',
+      frequency: 250,
+      Q: 2.4,
+    }).connect(this.bowedVibrato);
+
+    const bodyMid = new Tone.Filter({
+      type: 'bandpass',
+      frequency: 520,
+      Q: 2.8,
+    }).connect(this.bowedVibrato);
+
+    const bodyHigh = new Tone.Filter({
+      type: 'bandpass',
+      frequency: 1850,
+      Q: 3.1,
+    }).connect(this.bowedVibrato);
+
+    this.woodyBodyFilters = [bodyLow, bodyMid, bodyHigh];
+
+    this.bowedStringSynth = new Tone.PolySynth(Tone.AMSynth, {
+      harmonicity: 1.0,
+      oscillator: {
+        type: 'fatsawtooth',
+        count: 3,
+        spread: 18,
+      },
+      modulation: {
+        type: 'triangle',
+      },
+      envelope: {
+        attack: 3.0, // Slow 3.0s bowed attack
+        decay: 2.4,
+        sustain: 0.78,
+        release: 4.8 + viscosity * 4.2,
+      },
+      modulationEnvelope: {
+        attack: 2.2,
+        decay: 1.8,
+        sustain: 0.85,
+        release: 4.0,
+      },
+      volume: -6,
+    });
+    this.bowedStringSynth.connect(bodyLow);
+    this.bowedStringSynth.connect(bodyMid);
+    this.bowedStringSynth.connect(bodyHigh);
+
+    // Sympathetic Karplus-Strong string resonance layer
+    this.karplusPluckSynth = new Tone.PluckSynth({
+      attackNoise: 0.35,
+      dampening: 2200,
+      resonance: 0.96,
+      release: 3.5,
+      volume: -14,
+    });
+    this.karplusPluckSynth.connect(bodyLow);
+    this.karplusPluckSynth.connect(bodyMid);
 
     // =========================================================================
     // LAYER C: ORGANIC TEXTURE GENERATOR (Brown/Pink Noise + Slow Bandpass LFO)
@@ -507,6 +742,52 @@ export class AudioEngine {
 
     this.pinkNoise = new Tone.Noise('pink').connect(this.pinkNoiseGain);
     this.brownNoise = new Tone.Noise('brown').connect(this.brownNoiseGain);
+  }
+
+  /**
+   * Periodic 180ms procedural tick for:
+   * 1. Vowel Formant Morphing ('Ahh' [700, 1220, 2600 Hz] <-> 'Ooo' [450, 800, 2830 Hz])
+   * 2. Stochastic 2.5 kHz Vinyl Crackle / Nocturnal Rain micro-impulses
+   */
+  private tickProceduralMicroEngines(): void {
+    if (!this.isInitialized) return;
+    const state = store.getState();
+    if (!state.isPlaying) return;
+
+    // 1. Update Vowel Formant Morphing for Cathedral Choir
+    if (this.formantFilters && state.activeSeedId === 'cathedral-choir') {
+      this.formantMorphPhase += 0.18 * (0.35 + (1 - state.macros.viscosity) * 0.45);
+      // Morph factor 0.0 ('Ooo') <-> 1.0 ('Ahh') biased gently by Luminance
+      const osc = 0.5 + 0.5 * Math.sin(this.formantMorphPhase);
+      const morphAhh = Math.max(
+        0,
+        Math.min(1, osc * 0.75 + state.macros.luminance * 0.25)
+      );
+
+      for (let i = 0; i < 3; i++) {
+        const targetHz =
+          VOWEL_OOO_FORMANTS[i] +
+          (VOWEL_AHH_FORMANTS[i] - VOWEL_OOO_FORMANTS[i]) * morphAhh;
+        this.formantFilters[i].frequency.rampTo(targetHz, 0.18);
+      }
+    }
+
+    // 2. Stochastic 2.5 kHz Vinyl Crackle micro-impulses
+    if (this.vinylCrackleSynth && this.vinylCrackleFilter) {
+      const isMidnightVinyl = state.activeSeedId === 'midnight-vinyl';
+      const crackleProb = isMidnightVinyl
+        ? 0.42 + state.macros.nostalgia * 0.42
+        : state.macros.nostalgia > 0.45
+          ? (state.macros.nostalgia - 0.45) * 0.45
+          : 0;
+
+      if (crackleProb > 0 && Math.random() < crackleProb) {
+        // Randomize center frequency slightly around 2.5 kHz (2100 - 2900 Hz) for organic surface grain
+        this.vinylCrackleFilter.frequency.value = 2150 + Math.random() * 700;
+        const vel = (0.15 + Math.random() * 0.55) * (isMidnightVinyl ? 1.0 : 0.6);
+        this.vinylCrackleSynth.triggerAttackRelease(0.006, Tone.now(), vel);
+      }
+    }
   }
 
   private startContinuousGenerators(): void {
@@ -552,18 +833,17 @@ export class AudioEngine {
   }
 
   private computeSomaticSubLinearGain(state: AetheriumState): number {
-    if (state.mode !== 'practitioner') {
-      return 0.0;
-    }
-    // Warm 40-60 Hz physical room/headphone sub-anchor
-    return Math.max(0, Math.min(0.26, state.practitioner.somaticSubBassLevel * 0.24));
+    // Midnight Vinyl always engages its signature 45-65 Hz deep sub-bass sine drone
+    const vinylSubBase = state.activeSeedId === 'midnight-vinyl' ? 0.16 : 0.0;
+    const practitionerSub =
+      state.mode === 'practitioner' ? state.practitioner.somaticSubBassLevel * 0.24 : 0.0;
+    return Math.max(0, Math.min(0.28, Math.max(vinylSubBase, practitionerSub)));
   }
 
   private computeBinauralLinearGain(state: AetheriumState): number {
     if (state.mode !== 'practitioner' || !state.practitioner.binauralThetaEnabled) {
       return 0.0;
     }
-    // Masked organically beneath the ambient soundscape (-26 dB linear equivalent)
     return 0.048;
   }
 
@@ -590,9 +870,17 @@ export class AudioEngine {
   }
 
   private computeDroneFilterBreathBounds(
+    seedId: SeedId,
     luminance: number,
     fog: number
   ): { minCutoff: number; maxCutoff: number } {
+    // Midnight Vinyl keeps drone filter strictly warm and nocturnal (< 580 Hz)
+    if (seedId === 'midnight-vinyl') {
+      return {
+        minCutoff: 140,
+        maxCutoff: Math.round(360 + luminance * 210),
+      };
+    }
     const fogDamp = 1.0 - fog * 0.38;
     const minCutoff = Math.round((130 + luminance * 340) * fogDamp);
     const maxCutoff = Math.round((340 + luminance * 1250) * fogDamp);
@@ -618,28 +906,96 @@ export class AudioEngine {
     return 3.0 + viscosity * 5.5;
   }
 
-  private computeTimbreBlend(
+  private computeEngineVoiceGains(
     seedId: SeedId,
     viscosity: number,
     luminance: number
-  ): { feltBlend: number; glassyBlend: number } {
+  ): {
+    felt: number;
+    glassy: number;
+    rhodes: number;
+    bowls: number;
+    choir: number;
+    droneFormantSend: number;
+    bowed: number;
+  } {
     const preset = SEED_PRESETS[seedId];
-    if (preset.timbre === 'felt-piano') {
-      const padOverlay = Math.min(0.65, viscosity * 0.4 + luminance * 0.25);
-      return {
-        feltBlend: 0.85,
-        glassyBlend: 0.18 + padOverlay,
-      };
+    switch (preset.timbre) {
+      case 'rhodes-lofi':
+        return {
+          felt: 0.12,
+          glassy: 0.0,
+          rhodes: 0.95,
+          bowls: 0.0,
+          choir: 0.0,
+          droneFormantSend: 0.0,
+          bowed: 0.0,
+        };
+      case 'singing-bowls':
+        return {
+          felt: 0.0,
+          glassy: 0.16 * viscosity,
+          rhodes: 0.0,
+          bowls: 0.95,
+          choir: 0.0,
+          droneFormantSend: 0.0,
+          bowed: 0.0,
+        };
+      case 'cathedral-choir':
+        return {
+          felt: 0.0,
+          glassy: 0.22,
+          rhodes: 0.0,
+          bowls: 0.0,
+          choir: 0.95,
+          droneFormantSend: 0.78,
+          bowed: 0.0,
+        };
+      case 'bowed-strings':
+        return {
+          felt: 0.0,
+          glassy: 0.18,
+          rhodes: 0.0,
+          bowls: 0.0,
+          choir: 0.0,
+          droneFormantSend: 0.0,
+          bowed: 0.95,
+        };
+      case 'felt-piano': {
+        const padOverlay = Math.min(0.65, viscosity * 0.4 + luminance * 0.25);
+        return {
+          felt: 0.85,
+          glassy: 0.18 + padOverlay,
+          rhodes: 0.0,
+          bowls: 0.0,
+          choir: 0.0,
+          droneFormantSend: 0.0,
+          bowed: 0.0,
+        };
+      }
+      case 'glassy-pad':
+      default: {
+        const feltBody = Math.max(0.15, (1.0 - viscosity) * 0.45);
+        return {
+          felt: feltBody,
+          glassy: 0.88,
+          rhodes: 0.0,
+          bowls: 0.0,
+          choir: 0.0,
+          droneFormantSend: 0.0,
+          bowed: 0.0,
+        };
+      }
     }
-    const feltBody = Math.max(0.15, (1.0 - viscosity) * 0.45);
-    return {
-      feltBlend: feltBody,
-      glassyBlend: 0.88,
-    };
   }
 
-  private computeTextureNoiseGain(nostalgia: number, fog: number): number {
-    return 0.006 + nostalgia * 0.042 + fog * 0.016;
+  private computeTextureNoiseGain(
+    seedId: SeedId,
+    nostalgia: number,
+    fog: number
+  ): number {
+    const vinylBoost = seedId === 'midnight-vinyl' ? 0.018 : 0.0;
+    return 0.006 + nostalgia * 0.042 + fog * 0.016 + vinylBoost;
   }
 
   private updateDroneHarmony(seedId: SeedId, luminance: number, force = false): void {
@@ -671,7 +1027,6 @@ export class AudioEngine {
       this.activeSubNote = zone.subFundamental;
     }
 
-    // Update Somatic Sub-Bass (40-60 Hz) & EMDR Harmonic Pulse pitch to match tonal center
     if (this.somaticSubOsc) {
       this.somaticSubOsc.frequency.rampTo(resolveSomaticSubBassHz(seedId), RAMP_TIME_SEC);
     }
@@ -719,21 +1074,57 @@ export class AudioEngine {
       this.pingPongDelay.wet.rampTo(0.12 + fog * 0.34, RAMP_TIME_SEC);
     }
 
-    // 2. Viscosity & Luminance -> Layer A Drone Breathing LFO & Layer B Voice Envelopes
+    // 2. Viscosity & Luminance -> Layer A Drone Breathing LFO & Layer B Voice Buses
     if (this.droneBreathLfo) {
       this.droneBreathLfo.frequency.rampTo(this.breathFreqHz, RAMP_TIME_SEC);
-      const { minCutoff, maxCutoff } = this.computeDroneFilterBreathBounds(luminance, fog);
+      const { minCutoff, maxCutoff } = this.computeDroneFilterBreathBounds(
+        state.activeSeedId,
+        luminance,
+        fog
+      );
       this.droneBreathLfo.min = minCutoff;
       this.droneBreathLfo.max = maxCutoff;
     }
 
-    const { feltBlend, glassyBlend } = this.computeTimbreBlend(
-      state.activeSeedId,
-      viscosity,
-      luminance
-    );
-    this.feltVoiceGain?.gain.rampTo(feltBlend, RAMP_TIME_SEC);
-    this.glassyVoiceGain?.gain.rampTo(glassyBlend, RAMP_TIME_SEC);
+    const gains = this.computeEngineVoiceGains(state.activeSeedId, viscosity, luminance);
+    this.feltVoiceGain?.gain.rampTo(gains.felt, RAMP_TIME_SEC);
+    this.glassyVoiceGain?.gain.rampTo(gains.glassy, RAMP_TIME_SEC);
+    this.rhodesVoiceGain?.gain.rampTo(gains.rhodes, RAMP_TIME_SEC);
+    this.bowlVoiceGain?.gain.rampTo(gains.bowls, RAMP_TIME_SEC);
+    this.choirFormantBusGain?.gain.rampTo(gains.choir, RAMP_TIME_SEC);
+    this.droneFormantSendGain?.gain.rampTo(gains.droneFormantSend, RAMP_TIME_SEC);
+    this.bowedStringsBusGain?.gain.rampTo(gains.bowed, RAMP_TIME_SEC);
+
+    // Midnight Vinyl Rhodes low-pass ceiling (< 600 Hz) & 2.5 kHz Crackle Gain
+    if (this.rhodesLowpassFilter) {
+      const rhodesCutoff = Math.min(585, Math.round(380 + luminance * 200));
+      this.rhodesLowpassFilter.frequency.rampTo(rhodesCutoff, RAMP_TIME_SEC);
+    }
+    if (this.vinylCrackleGain) {
+      const targetCrackle =
+        state.activeSeedId === 'midnight-vinyl'
+          ? 0.25 + nostalgia * 0.38
+          : nostalgia > 0.45
+            ? (nostalgia - 0.45) * 0.25
+            : 0.0;
+      this.vinylCrackleGain.gain.rampTo(targetCrackle, RAMP_TIME_SEC);
+    }
+
+    // Bowed Glass & Strings 3.0s attack & 4.5Hz Vibrato depth
+    if (this.bowedStringSynth) {
+      this.bowedStringSynth.set({
+        envelope: {
+          attack: 2.6 + viscosity * 0.8, // ~3.0s bowed swell
+          decay: 2.4,
+          sustain: 0.78,
+          release: 4.5 + viscosity * 4.5,
+        },
+      });
+    }
+    if (this.bowedVibrato && this.woodyBodyFilters) {
+      this.bowedVibrato.depth.rampTo(0.12 + nostalgia * 0.14, RAMP_TIME_SEC);
+      this.woodyBodyFilters[2].frequency.rampTo(1650 + luminance * 550, RAMP_TIME_SEC);
+    }
 
     if (this.feltPianoSynth) {
       this.feltPianoSynth.set({
@@ -777,7 +1168,7 @@ export class AudioEngine {
 
     if (this.textureOutputGain) {
       this.textureOutputGain.gain.rampTo(
-        this.computeTextureNoiseGain(nostalgia, fog),
+        this.computeTextureNoiseGain(state.activeSeedId, nostalgia, fog),
         RAMP_TIME_SEC
       );
     }
@@ -840,7 +1231,7 @@ export class AudioEngine {
       this.vocalCarvingEq.gain.rampTo(targetCarveDb, RAMP_TIME_SEC);
     }
 
-    // 6. Clinical Tool 4: Somatic Sub-Bass (40-60 Hz) & Binaural Theta (100/106 Hz)
+    // 6. Clinical Tool 4 & Midnight Vinyl Sub-Bass (45-65 Hz) & Binaural Theta (100/106 Hz)
     if (this.somaticSubGain) {
       this.somaticSubGain.gain.rampTo(
         this.computeSomaticSubLinearGain(state),
@@ -868,6 +1259,9 @@ export class AudioEngine {
     }
   }
 
+  /**
+   * Triggers the active procedural Seed engine when a satellite crosses the 12 o'clock Meridian.
+   */
   private triggerSatelliteVoice(payload: SatelliteTriggerPayload): void {
     const state = store.getState();
     if (!state.isPlaying || payload.silencedByRarity) {
@@ -876,7 +1270,85 @@ export class AudioEngine {
 
     const now = Tone.now();
     const { viscosity } = state.macros;
+    const timbre = payload.timbre;
 
+    if (timbre === 'rhodes-lofi') {
+      // 1. Midnight Vinyl: Low-passed Rhodes FM chord dyad (<600 Hz)
+      if (this.rhodesSynth) {
+        const zone = store.getActiveHarmonicZone();
+        const thirdPitch =
+          zone.pitchClasses[(payload.satellite.scaleDegree + 2) % zone.pitchClasses.length] ??
+          zone.rootNote;
+        const chordNotes = [
+          payload.note,
+          `${thirdPitch}${Math.min(4, payload.satellite.octave)}`,
+        ];
+        this.rhodesSynth.triggerAttackRelease(
+          chordNotes,
+          1.6 + viscosity * 2.4,
+          now,
+          payload.velocity * 0.62
+        );
+      }
+      return;
+    }
+
+    if (timbre === 'singing-bowls') {
+      // 2. Singing Bowls: 4 Inharmonic Modal Sine Partials [1.0, 2.756, 5.404, 8.933]
+      const baseFreq = payload.frequency;
+      const modalDurations = [13.5, 10.5, 7.8, 5.2];
+      SINGING_BOWL_RATIOS.forEach((ratio, idx) => {
+        const partialFreq = baseFreq * ratio;
+        if (partialFreq < 9500 && this.bowlModalSynths[idx]) {
+          this.bowlModalSynths[idx].triggerAttackRelease(
+            partialFreq,
+            modalDurations[idx],
+            now,
+            payload.velocity * 0.65
+          );
+        }
+      });
+      return;
+    }
+
+    if (timbre === 'cathedral-choir') {
+      // 3. Cathedral Choir: Vowel Formant Filtered Choir Swell
+      if (this.choirSynth) {
+        this.choirSynth.triggerAttackRelease(
+          payload.note,
+          3.2 + viscosity * 4.2,
+          now,
+          payload.velocity * 0.58
+        );
+      }
+      if (this.glassyPadSynth) {
+        this.glassyPadSynth.triggerAttackRelease(
+          payload.note,
+          2.6 + viscosity * 3.2,
+          now + 0.04,
+          payload.velocity * 0.35
+        );
+      }
+      return;
+    }
+
+    if (timbre === 'bowed-strings') {
+      // 4. Bowed Glass & Strings: 3.0s Bowed Saw/Triangle Swell + Karplus-Strong Sympathetic String
+      if (this.bowedStringSynth) {
+        this.bowedStringSynth.triggerAttackRelease(
+          payload.note,
+          3.8 + viscosity * 4.5,
+          now,
+          payload.velocity * 0.64
+        );
+      }
+      if (this.karplusPluckSynth) {
+        this.karplusPluckSynth.triggerAttack(payload.note, now + 0.02);
+      }
+      return;
+    }
+
+    // Standard Felt Piano & Glassy Space Pad blend
     if (this.feltPianoSynth) {
       const feltDuration = 0.9 + viscosity * 2.2;
       this.feltPianoSynth.triggerAttackRelease(
@@ -902,6 +1374,9 @@ export class AudioEngine {
     if (this.sessionTickInterval !== null) {
       window.clearInterval(this.sessionTickInterval);
     }
+    if (this.crackleTickInterval !== null) {
+      window.clearInterval(this.crackleTickInterval);
+    }
     this.stopContinuousGenerators();
     this.wowFlutterLfo?.dispose();
     this.droneBreathLfo?.dispose();
@@ -916,6 +1391,14 @@ export class AudioEngine {
     this.droneSubSynth?.dispose();
     this.feltPianoSynth?.dispose();
     this.glassyPadSynth?.dispose();
+    this.rhodesSynth?.dispose();
+    this.vinylCrackleSynth?.dispose();
+    this.choirSynth?.dispose();
+    this.bowedStringSynth?.dispose();
+    this.karplusPluckSynth?.dispose();
+    for (const s of this.bowlModalSynths) {
+      s.dispose();
+    }
     this.pinkNoise?.dispose();
     this.brownNoise?.dispose();
     this.masterReverb?.dispose();

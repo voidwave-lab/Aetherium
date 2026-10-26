@@ -7,7 +7,13 @@ export type HarmonicZoneId =
   | 'floating-maj9'
   | 'cosmic-lydian';
 
-export type SatelliteTimbreKind = 'felt-piano' | 'glassy-pad';
+export type SatelliteTimbreKind =
+  | 'felt-piano'
+  | 'glassy-pad'
+  | 'rhodes-lofi'
+  | 'singing-bowls'
+  | 'cathedral-choir'
+  | 'bowed-strings';
 
 export interface HarmonicZoneInfo {
   id: HarmonicZoneId;
@@ -28,7 +34,10 @@ export interface QuantizedSatellitePitch {
   harmonicZone: HarmonicZoneInfo;
 }
 
-const SEED_ROOT_MAP: Record<SeedId, { darkRoot: string; brightRoot: string; primaryTimbre: SatelliteTimbreKind }> = {
+const SEED_ROOT_MAP: Record<
+  SeedId,
+  { darkRoot: string; brightRoot: string; primaryTimbre: SatelliteTimbreKind }
+> = {
   'rain-on-felt': {
     darkRoot: 'D',
     brightRoot: 'D',
@@ -48,6 +57,26 @@ const SEED_ROOT_MAP: Record<SeedId, { darkRoot: string; brightRoot: string; prim
     darkRoot: 'D',
     brightRoot: 'G',
     primaryTimbre: 'glassy-pad',
+  },
+  'midnight-vinyl': {
+    darkRoot: 'D',
+    brightRoot: 'F',
+    primaryTimbre: 'rhodes-lofi',
+  },
+  'singing-bowls': {
+    darkRoot: 'C',
+    brightRoot: 'F',
+    primaryTimbre: 'singing-bowls',
+  },
+  'cathedral-choir': {
+    darkRoot: 'D',
+    brightRoot: 'G',
+    primaryTimbre: 'cathedral-choir',
+  },
+  'bowed-glass-strings': {
+    darkRoot: 'C',
+    brightRoot: 'D',
+    primaryTimbre: 'bowed-strings',
   },
 };
 
@@ -71,7 +100,7 @@ export class HarmonicEngine {
     const seedRoots = SEED_ROOT_MAP[seedId] ?? SEED_ROOT_MAP['rain-on-felt'];
 
     if (clampedLum < 0.25) {
-      const root = seedRoots.darkRoot; // C or D
+      const root = seedRoots.darkRoot;
       const isPhrygian = seedId === 'subterranean' && clampedLum < 0.12;
       const scaleType = isPhrygian ? 'phrygian' : 'aeolian';
       const scaleData = Scale.get(`${root} ${scaleType}`);
@@ -95,7 +124,7 @@ export class HarmonicEngine {
     }
 
     if (clampedLum < 0.50) {
-      const root = seedRoots.darkRoot; // D or C
+      const root = seedRoots.darkRoot;
       const scaleData = Scale.get(`${root} dorian`);
       const baseNotes =
         scaleData.notes.length > 0
@@ -178,7 +207,7 @@ export class HarmonicEngine {
       pitchClasses,
       droneVoicing: [`${notes[0]}2`, `${notes[4]}2`, `${notes[6]}3`, `${notes[3]}4`],
       subFundamental: `${root}1`,
-      timbrePreference: 'glassy-pad',
+      timbrePreference: seedRoots.primaryTimbre,
     };
   }
 

@@ -6,7 +6,15 @@ import {
 
 export type OperatingMode = 'explorer' | 'practitioner';
 
-export type SeedId = 'rain-on-felt' | 'deep-drift' | 'subterranean' | 'solar-wind';
+export type SeedId =
+  | 'rain-on-felt'
+  | 'deep-drift'
+  | 'subterranean'
+  | 'solar-wind'
+  | 'midnight-vinyl'
+  | 'singing-bowls'
+  | 'cathedral-choir'
+  | 'bowed-glass-strings';
 
 export type SleepTimerDuration = 0 | 15 | 30 | 60;
 
@@ -333,6 +341,104 @@ export const SEED_PRESETS: Record<SeedId, SeedPreset> = {
       { semiMajorAxis: 0.83, eccentricity: 0.12, angle: 2.7, argumentOfPeriapsis: 1.8, scaleDegree: 1 },
     ],
   },
+  'midnight-vinyl': {
+    id: 'midnight-vinyl',
+    name: 'Midnight Vinyl',
+    subtitle: 'Nocturnal Lo-Fi · <600Hz Rhodes & Vinyl Crackle',
+    description:
+      'Deep 45–65 Hz sub-bass sine drone, heavily low-passed Rhodes FM chords (<600 Hz), and stochastic 2.5 kHz vinyl crackle & nocturnal rain.',
+    rootNote: 'D',
+    scaleType: 'dorian',
+    timbre: 'rhodes-lofi',
+    noiseProfile: 'pink',
+    defaultMacros: {
+      luminance: 0.26,
+      fog: 0.62,
+      viscosity: 0.54,
+      nostalgia: 0.84,
+      rarity: 0.28,
+    },
+    initialOrbits: [
+      { semiMajorAxis: 0.32, eccentricity: 0.12, angle: -2.0, argumentOfPeriapsis: 0.6, scaleDegree: 0 },
+      { semiMajorAxis: 0.48, eccentricity: 0.15, angle: -0.7, argumentOfPeriapsis: 1.4, scaleDegree: 2 },
+      { semiMajorAxis: 0.64, eccentricity: 0.11, angle: 0.9, argumentOfPeriapsis: 2.1, scaleDegree: 5 },
+      { semiMajorAxis: 0.81, eccentricity: 0.16, angle: 2.4, argumentOfPeriapsis: 0.3, scaleDegree: 1 },
+    ],
+  },
+  'singing-bowls': {
+    id: 'singing-bowls',
+    name: 'Singing Bowls',
+    subtitle: 'Inharmonic Modal · 4 Metallic Ratios (14s Decay)',
+    description:
+      'Clinical grounding via 4-mode inharmonic sine partials (1.0, 2.756, 5.404, 8.933) with a 0.08s felt-mallet strike and 14s resonant decay.',
+    rootNote: 'F',
+    scaleType: 'maj9',
+    timbre: 'singing-bowls',
+    noiseProfile: 'brown',
+    defaultMacros: {
+      luminance: 0.58,
+      fog: 0.54,
+      viscosity: 0.72,
+      nostalgia: 0.18,
+      rarity: 0.34,
+    },
+    initialOrbits: [
+      { semiMajorAxis: 0.25, eccentricity: 0.08, angle: -1.7, argumentOfPeriapsis: 0.5, scaleDegree: 0 },
+      { semiMajorAxis: 0.44, eccentricity: 0.10, angle: -0.3, argumentOfPeriapsis: 1.6, scaleDegree: 3 },
+      { semiMajorAxis: 0.65, eccentricity: 0.12, angle: 1.2, argumentOfPeriapsis: 2.4, scaleDegree: 4 },
+      { semiMajorAxis: 0.84, eccentricity: 0.09, angle: 2.5, argumentOfPeriapsis: 0.9, scaleDegree: 1 },
+    ],
+  },
+  'cathedral-choir': {
+    id: 'cathedral-choir',
+    name: 'Cathedral Choir',
+    subtitle: 'Vowel Formant DSP · Morphing Ahh ↔ Ooo Choir',
+    description:
+      'Drone and satellite pads sculpted through 3 parallel vocal formant bandpass filters morphing between "Ahh" [700, 1220, 2600 Hz] and "Ooo" [450, 800, 2830 Hz].',
+    rootNote: 'G',
+    scaleType: 'lydian',
+    timbre: 'cathedral-choir',
+    noiseProfile: 'pink',
+    defaultMacros: {
+      luminance: 0.76,
+      fog: 0.84,
+      viscosity: 0.80,
+      nostalgia: 0.32,
+      rarity: 0.26,
+    },
+    initialOrbits: [
+      { semiMajorAxis: 0.28, eccentricity: 0.11, angle: -1.9, argumentOfPeriapsis: 0.8, scaleDegree: 0 },
+      { semiMajorAxis: 0.46, eccentricity: 0.14, angle: -0.6, argumentOfPeriapsis: 1.9, scaleDegree: 1 },
+      { semiMajorAxis: 0.62, eccentricity: 0.13, angle: 0.8, argumentOfPeriapsis: 0.4, scaleDegree: 3 },
+      { semiMajorAxis: 0.79, eccentricity: 0.10, angle: 2.1, argumentOfPeriapsis: 1.5, scaleDegree: 4 },
+      { semiMajorAxis: 0.90, eccentricity: 0.07, angle: -1.2, argumentOfPeriapsis: 2.7, scaleDegree: 2 },
+    ],
+  },
+  'bowed-glass-strings': {
+    id: 'bowed-glass-strings',
+    name: 'Bowed Glass & Strings',
+    subtitle: 'Post-Rock / Cinematic · 3s Bowed Swell & Woody Body',
+    description:
+      'Slow-attack (3.0s) bowed saw/triangle & sympathetic Karplus-Strong strings routed through a woody body-resonance filter bank with 4.5 Hz organic vibrato.',
+    rootNote: 'D',
+    scaleType: 'dorian',
+    timbre: 'bowed-strings',
+    noiseProfile: 'brown',
+    defaultMacros: {
+      luminance: 0.44,
+      fog: 0.64,
+      viscosity: 0.68,
+      nostalgia: 0.46,
+      rarity: 0.22,
+    },
+    initialOrbits: [
+      { semiMajorAxis: 0.24, eccentricity: 0.10, angle: -2.2, argumentOfPeriapsis: 0.3, scaleDegree: 2 },
+      { semiMajorAxis: 0.41, eccentricity: 0.15, angle: -0.9, argumentOfPeriapsis: 1.7, scaleDegree: 4 },
+      { semiMajorAxis: 0.59, eccentricity: 0.12, angle: 0.5, argumentOfPeriapsis: 2.3, scaleDegree: 0 },
+      { semiMajorAxis: 0.76, eccentricity: 0.14, angle: 1.9, argumentOfPeriapsis: 0.8, scaleDegree: 5 },
+      { semiMajorAxis: 0.88, eccentricity: 0.09, angle: -1.4, argumentOfPeriapsis: 1.2, scaleDegree: 3 },
+    ],
+  },
 };
 
 export function radiusToOctave(semiMajorAxis: number): number {
@@ -363,9 +469,6 @@ export function resolveSatellitePitch(
   };
 }
 
-/**
- * Smooth cosine interpolation helper (0..1)
- */
 function cosineInterp(a: number, b: number, t: number): number {
   const clamped = Math.max(0, Math.min(1, t));
   const mu = (1 - Math.cos(clamped * Math.PI)) * 0.5;
@@ -391,12 +494,6 @@ function interpolateVectors(
   };
 }
 
-/**
- * Evaluates the ISO-Principle Session Vector at any normalized progress point (0.0 to 1.0):
- * - 0.00 -> 0.75: Phase 1 (Mirroring) smoothly morphing into Phase 2 (Co-Regulation Target State at 75%)
- * - 0.75 -> 0.90: Deep Co-Regulation consolidation plateau
- * - 0.90 -> 1.00: Phase 3 (Re-Orientation — final 10% gently raises luminance & clarity)
- */
 export function evaluateIsoSessionArc(
   progress01: number,
   startStateId: IsoStartStateId,
@@ -407,7 +504,6 @@ export function evaluateIsoSessionArc(
   const targetVec = ISO_TARGET_STATES[targetStateId].vector;
 
   if (p < 0.22) {
-    // Phase 1 — Mirroring initial state with gentle onset into transition
     const localT = p / 0.75;
     return {
       phase: 'mirroring',
@@ -416,7 +512,6 @@ export function evaluateIsoSessionArc(
   }
 
   if (p < 0.75) {
-    // Phase 2 — Co-Regulation vector morphing toward target state at 75%
     const localT = p / 0.75;
     return {
       phase: 'co-regulation',
@@ -425,14 +520,12 @@ export function evaluateIsoSessionArc(
   }
 
   if (p < 0.90) {
-    // Deep Co-Regulation hold (75% -> 90%)
     return {
       phase: 'co-regulation',
       vector: { ...targetVec },
     };
   }
 
-  // Phase 3 — Re-Orientation (final 10%: 0.90 -> 1.00)
   const reorientT = (p - 0.90) / 0.10;
   return {
     phase: 're-orientation',
@@ -614,14 +707,13 @@ class AetheriumStore {
     const preset = SEED_PRESETS[seedId];
     if (!preset) return;
 
-    const zone = HarmonicEngine.resolveHarmonicZone(seedId, preset.defaultMacros.luminance);
     this.state = {
       ...this.state,
       activeSeedId: seedId,
       macros: { ...preset.defaultMacros },
       satellites: createSatellitesForPreset(preset),
     };
-    this.showToast(`Seed Loaded: ${preset.name} (${zone.label})`);
+    this.showToast(`Seed Loaded: ${preset.name} (${preset.subtitle})`);
     this.emit();
   }
 
@@ -724,7 +816,6 @@ class AetheriumStore {
       this.state.macros.luminance
     );
 
-    // Rarity (Entropy Gate): probability check against rarity parameter
     const silencedByRarity =
       this.state.macros.rarity > 0.01 && Math.random() < this.state.macros.rarity * 0.9;
 
@@ -757,7 +848,6 @@ class AetheriumStore {
 
     this.state.lastTriggerEvent = payload;
 
-    // Emit DOM CustomEvent on window as required by specification
     window.dispatchEvent(
       new CustomEvent<SatelliteTriggerPayload>('onSatelliteTrigger', {
         detail: payload,
@@ -825,10 +915,6 @@ class AetheriumStore {
     this.emit();
   }
 
-  /**
-   * Starts, pauses, or seeks the Automated ISO-Principle Session Arc,
-   * immediately applying the interpolated macro & orbital pacing parameters.
-   */
   public applyIsoArcAtElapsed(elapsedSec: number, keepRunning?: boolean): void {
     const totalSec = this.state.practitioner.isoDurationMinutes * 60;
     const clampedElapsed = Math.max(0, Math.min(totalSec, elapsedSec));
@@ -932,7 +1018,7 @@ class AetheriumStore {
   public serializeConstellation(name = 'Aetherium Session Constellation'): string {
     const p = this.state.practitioner;
     const payload = {
-      version: '0.3.0',
+      version: '0.4.0',
       name,
       saved_at: new Date().toISOString(),
       mode: this.state.mode,

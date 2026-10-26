@@ -65,7 +65,15 @@ Designed for pure, distraction-free tactile interaction:
      - **Outer Orbits (Far from Core):** Orbit slowly and play deep cello/bass register notes (Octaves 2–3).
    - **Reshaping & Dissolving:** Drag any satellite closer or further from the Core to change its pitch register; **right-click** (or **press and hold**) a satellite to dissolve it into particles.
 3. **The Bottom Poetic Dock:**
-   - **Seeds (Starting Moods):** Choose between *Rain on Felt* (intimate muted piano), *Deep Drift* (expansive space pad), *Subterranean* (grounded dark drone), or *Solar Wind* (warm, sunlit consonance).
+   - **8 Procedural Seeds (Starting Moods & Synthesis Engines):**
+     - *Rain on Felt* (intimate muted FM piano & distant rain)
+     - *Deep Drift* (expansive Lydian space pad)
+     - *Subterranean* (grounded dark sub-harmonic drone)
+     - *Solar Wind* (warm, sunlit Maj9 consonance)
+     - *Midnight Vinyl* (nocturnal Lo-Fi / Future Garage with `<600 Hz` Rhodes FM chords, `45–65 Hz` sub-bass, and stochastic `2.5 kHz` vinyl crackle)
+     - *Singing Bowls* (clinical grounding via 4 inharmonic metallic partials `[1.0, 2.756, 5.404, 8.933]` with `0.08s` felt-mallet attack and `14s` decay)
+     - *Cathedral Choir* (vowel formant synthesis morphing continuously between `'Ahh'` `[700, 1220, 2600 Hz]` and `'Ooo'` `[450, 800, 2830 Hz]`)
+     - *Bowed Glass & Strings* (post-rock / cinematic `3.0s` slow-attack bowed strings & Karplus-Strong sympathetic resonance through a woody body filter bank with `4.5 Hz` vibrato)
    - **Luminance (*Shadow ↔ Light*):** Gradually shifts the musical scale from melancholic minor (*Aeolian / Phrygian*) through wistful *Dorian* and *Major 9th* into expansive *Lydian* wonder, while brightening the tone.
    - **Fog (*Clarity ↔ Mist*):** Wraps the soundscape in a deep, cathedral-like reverb and softens high frequencies into a distant mist.
    - **Viscosity (*Crystalline ↔ Dense*):** Slows the orbiting satellites down, lengthens their visual motion trails, and softens note attacks into slow swells.
@@ -251,10 +259,13 @@ flowchart LR
    - **Pad Foundation:** `Tone.PolySynth(Tone.Synth)` configured with a 3-oscillator detuned sawtooth (`type: 'fatsawtooth'`, `spread: 24 cents`) playing the active 4-note modal voicing.
    - **Sub-Fundamental Anchor:** Dedicated `Tone.Synth` (`type: 'sine'`, attenuated at `-12 dB` relative to the pad) locked to `rootNote + 1` (e.g., `C1`, `D1`, `F1`, `G1`).
    - **Respiratory Filter Modulation:** Both oscillators feed a resonant `24 dB/oct` low-pass filter (`Q = 2.1`) whose cutoff frequency is swept by a slow sinusoidal LFO (`0.05 Hz` to `0.15 Hz`, corresponding to a 6.6-to-20-second respiratory cycle). The instantaneous phase of this LFO is exposed via `audioEngine.getBreathingModulation(timeSec)` so the visual Core on the canvas expands and contracts in exact synchrony with the acoustic filter swell.
-2. **Layer B — Dual-Timbre Satellite Voices:**
-   - **Voice 1 (Felt Piano / Intimate Pluck):** Polyphonic `Tone.FMSynth` (`harmonicity: 2.0`, `modulationIndex: 1.2 + 1.4 * luminance`, triangle modulator with fast decay) producing a soft, muted felt-hammer transient followed by a warm woody decay (`attack: 0.015s – 0.28s`, `release: 1.8s – 6.5s`).
-   - **Voice 2 (Glassy Space Pad):** Polyphonic `Tone.AMSynth` (`harmonicity: 1.5` fifth overtone shimmer, dual `fatsine` carrier) with a click-free slow attack (`1.5s – 4.0s` scaled by `viscosity`) and long halo release (`3.0s – 8.5s`).
-   - Each Seed preset defines its primary timbre (*Rain on Felt* and *Subterranean* prioritize Felt Piano; *Deep Drift* and *Solar Wind* prioritize Glassy Space Pad) while cross-blending the secondary timbre dynamically as `viscosity` and `luminance` change.
+2. **Layer B — 6 Procedural Seed Synthesis Engines:**
+   - **Engine 1 (Felt Piano / Intimate Pluck):** Polyphonic `Tone.FMSynth` (`harmonicity: 2.0`, `modulationIndex: 1.2 + 1.4 * luminance`, triangle modulator with fast decay) producing a soft, muted felt-hammer transient followed by a warm woody decay (`attack: 0.015s – 0.28s`, `release: 1.8s – 6.5s`).
+   - **Engine 2 (Glassy Space Pad):** Polyphonic `Tone.AMSynth` (`harmonicity: 1.5` fifth overtone shimmer, dual `fatsine` carrier) with a click-free slow attack (`1.5s – 4.0s` scaled by `viscosity`) and long halo release (`3.0s – 8.5s`).
+   - **Engine 3 (Midnight Vinyl — Nocturnal Lo-Fi / Future Garage):** Warm Rhodes FM electric piano dyads (`harmonicity: 1.0`) routed through a dedicated `24 dB/oct` low-pass filter (`< 600 Hz`), paired with an automatic `55 Hz` (`45–65 Hz`) sub-bass sine anchor and a stochastic micro-impulse generator filtered through a `2.5 kHz` bandpass resonator (`Q = 3.4`) for vinyl crackle and nocturnal rain.
+   - **Engine 4 (Singing Bowls — Inharmonic Modal Synthesis):** 4 parallel `Tone.PolySynth` sine banks tuned to Euler-Bernoulli metallic mode ratios ($[1.000,\ 2.756,\ 5.404,\ 8.933] \times f_0$) with a `0.08s` felt-mallet attack and staggered ultra-long modal decays up to `14.0s`.
+   - **Engine 5 (Cathedral Choir — Vowel Formant Synthesis):** Routes a 4-voice detuned sawtooth choir synth and a continuous send from the Core Drone through 3 parallel high-$Q$ bandpass filters ($F_1, F_2, F_3$) that continuously morph between Vowel `'Ahh'` ($[700\text{ Hz},\ 1220\text{ Hz},\ 2600\text{ Hz}]$) and Vowel `'Ooo'` ($[450\text{ Hz},\ 800\text{ Hz},\ 2830\text{ Hz}]$).
+   - **Engine 6 (Bowed Glass & Strings — Post-Rock / Cinematic):** Combines a `3.0s` slow-attack AM bowed `fatsawtooth`/`triangle` synth and a physical-modeling Karplus-Strong `Tone.PluckSynth` routed through a 3-band woody body-resonance filter bank ($250\text{ Hz}$ cavity, $520\text{ Hz}$ bridge, $1850\text{ Hz}$ rosin sheen) with a `4.5 Hz` organic vibrato.
 3. **Layer C — Organic Texture Generator:**
    - Dual procedural `Tone.Noise('pink')` and `Tone.Noise('brown')` generators routed through a `12 dB/oct` bandpass filter (`Q = 1.8`) swept continuously between `240 Hz` and `1,180 Hz` by a `0.065 Hz` LFO, emulating distant rain on felt, wind through pines, or warm analog room tone.
 
