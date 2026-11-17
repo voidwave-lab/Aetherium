@@ -109,7 +109,7 @@ export class MobileDock {
 
     this.topBar = document.createElement('header');
     this.topBar.className =
-      'fixed top-0 left-0 right-0 z-30 px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] pb-2 pointer-events-none flex items-center justify-between gap-2';
+      'fixed top-0 left-0 right-0 z-30 px-3.5 pt-[calc(env(safe-area-inset-top,0px)+0.65rem)] pb-2 pointer-events-none flex flex-col gap-2';
     container.appendChild(this.topBar);
 
     this.sheetContainer = document.createElement('footer');
@@ -127,35 +127,44 @@ export class MobileDock {
 
   private buildDOM(): void {
     this.topBar.innerHTML = `
-      <div class="pointer-events-auto flex items-center gap-2.5 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-3 py-1.5 shadow-lg">
-        ${renderMeridianEclipseEmblem('w-6 h-6 rounded-lg shadow-[0_0_10px_rgba(34,211,238,0.3)]')}
-        <div class="flex flex-col">
-          <div class="flex items-center gap-1.5">
-            <span class="text-[11px] font-semibold tracking-[0.16em] uppercase text-slate-100">Aetherium</span>
-            <span class="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/25">Pocket</span>
+      <div class="w-full flex items-center justify-between gap-2">
+        <div class="pointer-events-auto flex items-center gap-2.5 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-3 py-1.5 shadow-lg">
+          ${renderMeridianEclipseEmblem('w-6 h-6 rounded-lg shadow-[0_0_10px_rgba(34,211,238,0.3)]')}
+          <div class="flex flex-col">
+            <div class="flex items-center gap-1.5">
+              <span class="text-[11px] font-semibold tracking-[0.16em] uppercase text-slate-100">Aetherium</span>
+              <span class="text-[9px] font-mono uppercase tracking-wider px-1.5 py-0.5 rounded bg-indigo-500/20 text-indigo-300 border border-indigo-400/25">Pocket</span>
+            </div>
+            <span id="mobile-active-zone-label" class="text-[10px] font-mono text-slate-400 truncate max-w-[165px]">D Dorian · Felt Piano</span>
           </div>
-          <span id="mobile-active-zone-label" class="text-[10px] font-mono text-slate-400 truncate max-w-[165px]">D Dorian · Felt Piano</span>
+        </div>
+
+        <div class="pointer-events-auto flex items-center gap-1.5 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-2.5 py-1.5 shadow-lg">
+          <span id="mobile-sat-counter" class="text-[10px] font-mono text-slate-400 px-1.5">3/8 Orbits</span>
+          <button
+            id="mobile-clear-orbits-btn"
+            type="button"
+            class="px-2 py-1 rounded-lg text-[10px] font-medium text-slate-400 active:text-slate-100 bg-slate-900/80 border border-slate-800/70"
+            title="Dissolve all satellites"
+          >
+            Clear
+          </button>
+          <button
+            id="mobile-about-btn"
+            type="button"
+            class="px-2 py-1 rounded-lg text-[10px] font-medium text-indigo-200/90 bg-indigo-950/45 border border-indigo-500/30 active:bg-indigo-900/60"
+            title="Ethics, Transparency &amp; Bibliography"
+          >
+            ⓘ Ethics
+          </button>
         </div>
       </div>
 
-      <div class="pointer-events-auto flex items-center gap-1.5 bg-slate-950/75 backdrop-blur-xl border border-slate-800/80 rounded-2xl px-2.5 py-1.5 shadow-lg">
-        <span id="mobile-sat-counter" class="text-[10px] font-mono text-slate-400 px-1.5">3/8 Orbits</span>
-        <button
-          id="mobile-clear-orbits-btn"
-          type="button"
-          class="px-2 py-1 rounded-lg text-[10px] font-medium text-slate-400 active:text-slate-100 bg-slate-900/80 border border-slate-800/70"
-          title="Dissolve all satellites"
-        >
-          Clear
-        </button>
-        <button
-          id="mobile-about-btn"
-          type="button"
-          class="px-2 py-1 rounded-lg text-[10px] font-medium text-indigo-200/90 bg-indigo-950/45 border border-indigo-500/30 active:bg-indigo-900/60"
-          title="Ethics, Transparency &amp; Bibliography"
-        >
-          ⓘ Ethics
-        </button>
+      <div class="w-full flex justify-center pointer-events-none">
+        <div
+          id="mobile-status-toast"
+          class="opacity-0 -translate-y-1 transition-all duration-300 bg-slate-950/88 backdrop-blur-xl px-3.5 py-1 rounded-full text-[11px] font-mono text-sky-200 border border-sky-400/30 shadow-lg max-w-[92vw] truncate"
+        ></div>
       </div>
     `;
 
@@ -563,6 +572,19 @@ export class MobileDock {
     const volSlider = this.sheetContainer.querySelector<HTMLInputElement>('#mobile-master-volume');
     if (volSlider && document.activeElement !== volSlider) {
       volSlider.value = state.masterVolume.toFixed(2);
+    }
+
+    // Ephemeral Status Toast
+    const toastEl = this.topBar.querySelector<HTMLElement>('#mobile-status-toast');
+    if (toastEl) {
+      if (state.statusToast) {
+        toastEl.textContent = state.statusToast;
+        toastEl.classList.remove('opacity-0', '-translate-y-1');
+        toastEl.classList.add('opacity-100', 'translate-y-0');
+      } else {
+        toastEl.classList.add('opacity-0', '-translate-y-1');
+        toastEl.classList.remove('opacity-100', 'translate-y-0');
+      }
     }
   }
 }

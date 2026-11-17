@@ -69,28 +69,42 @@ function createSoftClipCurve(driveAmount: number, samples = 1024): Float32Array 
 }
 
 /**
- * Resolves a harmonic sub-bass anchor frequency strictly within 45 Hz - 65 Hz (or 43.65-58.27 Hz)
- * aligned with the active seed's tonal center.
+ * Resolves a harmonically consonant sub-bass anchor frequency strictly within 41.2 Hz - 61.74 Hz
+ * aligned with the active harmonic zone's tonal center (Root when E1..B1, Perfect 5th when C..Eb).
  */
-function resolveSomaticSubBassHz(seedId: SeedId): number {
-  switch (seedId) {
-    case 'midnight-vinyl':
-      return 55.0; // A1 (55.0 Hz deep nocturnal sub-bass anchor within 45-65 Hz)
-    case 'rain-on-felt':
-      return 55.0; // A1 (55.0 Hz)
-    case 'deep-drift':
-      return 43.65; // F1 (43.65 Hz)
-    case 'singing-bowls':
-      return 43.65; // F1 (43.65 Hz)
-    case 'subterranean':
-      return 49.0; // G1 (49.0 Hz)
-    case 'solar-wind':
-    case 'cathedral-choir':
-      return 49.0; // G1 (49.0 Hz)
-    case 'bowed-glass-strings':
-      return 55.0; // A1 (55.0 Hz)
+function resolveSomaticSubBassHz(rootNote: string): number {
+  const pitchClass = rootNote.replace(/[0-9]/g, '').trim();
+  switch (pitchClass) {
+    case 'E':
+    case 'Fb':
+      return 41.2; // E1 (Root)
+    case 'F':
+    case 'E#':
+      return 43.65; // F1 (Root)
+    case 'F#':
+    case 'Gb':
+      return 46.25; // F#1 (Root)
+    case 'G':
+    case 'C':
+      return 49.0; // G1 (Root for G, Perfect 5th for C)
+    case 'G#':
+    case 'Ab':
+    case 'C#':
+    case 'Db':
+      return 51.91; // Ab1 (Root for Ab, Perfect 5th for Db)
+    case 'A':
+    case 'D':
+      return 55.0; // A1 (Root for A, Perfect 5th for D)
+    case 'A#':
+    case 'Bb':
+    case 'D#':
+    case 'Eb':
+      return 58.27; // Bb1 (Root for Bb, Perfect 5th for Eb)
+    case 'B':
+    case 'Cb':
+      return 61.74; // B1 (Root)
     default:
-      return 50.0;
+      return 49.0;
   }
 }
 
@@ -139,10 +153,22 @@ export class AudioEngine {
 
   // Clinical Tool 3: Bilateral Stimulation (EMDR / Somatic Panner + Soft Harmonic Pulse)
   private bilateralPanner: Tone.Panner | null = null;
+  private spatialVoicePanner: Tone.Panner | null = null;
   private emdrLfo: Tone.LFO | null = null;
   private emdrPulseOsc: Tone.Oscillator | null = null;
   private emdrPulseLfo: Tone.LFO | null = null;
   private emdrPulseGain: Tone.Gain | null = null;
+
+  // Phase-locked visual modulation accumulators & sync guards
+  private breathPhaseRad = 0;
+  private lastBreathClockSec: number | null = null;
+  private emdrPhaseRad = 0;
+  private lastEmdrClockSec: number | null = null;
+  private stopTimeoutId: number | null = null;
+  private lastSyncedAudioSig = '';
+  private lastSynthEnvelopeLum = -1;
+  private lastSynthEnvelopeVisc = -1;
+  private lastCoreOffsetX = 0;
 
   // Clinical Tool 4: Somatic Sub-Bass Anchor (40-65 Hz) & 6 Hz Binaural Theta Entrainment (100 Hz L / 106 Hz R)
   private somaticSubOsc: Tone.Oscillator | null = null;
@@ -262,17 +288,42 @@ export class AudioEngine {
     }, 180);
   }
 
+  private getAudioClockOrFallback(fallbackSec: number): number {
+    if (this.isInitialized) {
+      const ctxTime = Tone.now();
+      if (Number.isFinite(ctxTime) && ctxTime >= 0) {
+        return ctxTime;
+      }
+    }
+    return fallbackSec;
+  }
+
   public getBreathingModulation(timeSec: number): number {
-    return 0.5 + 0.5 * Math.sin(timeSec * Math.PI * 2 * this.breathFreqHz);
+    const clock = this.getAudioClockOrFallback(timeSec);
+    if (this.lastBreathClockSec !== null) {
+      const dt = Math.max(0, Math.min(0.25, clock - this.lastBreathClockSec));
+      this.breathPhaseRad =
+        (this.breathPhaseRad + dt * Math.PI * 2 * this.breathFreqHz) % (Math.PI * 2);
+    }
+    this.lastBreathClockSec = clock;
+    return 0.5 + 0.5 * Math.sin(this.breathPhaseRad);
   }
 
   public getBilateralPanPosition(timeSec: number): number | null {
     const state = store.getState();
     if (state.mode !== 'practitioner' || !state.practitioner.emdrBilateralEnabled) {
+      this.lastEmdrClockSec = null;
       return null;
     }
     const { emdrRateHz, emdrStereoWidth } = state.practitioner;
-    return Math.sin(timeSec * Math.PI * 2 * emdrRateHz) * emdrStereoWidth;
+    const clock = this.getAudioClockOrFallback(timeSec);
+    if (this.lastEmdrClockSec !== null) {
+      const dt = Math.max(0, Math.min(0.25, clock - this.lastEmdrClockSec));
+      this.emdrPhaseRad =
+        (this.emdrPhaseRad + dt * Math.PI * 2 * emdrRateHz) % (Math.PI * 2);
+    }
+    this.lastEmdrClockSec = clock;
+    return Math.sin(this.emdrPhaseRad) * emdrStereoWidth;
   }
 
   public async togglePlayback(): Promise<void> {
@@ -302,6 +353,11 @@ export class AudioEngine {
     if (this.isStarting) return;
     this.isStarting = true;
 
+    if (this.stopTimeoutId !== null) {
+      window.clearTimeout(this.stopTimeoutId);
+      this.stopTimeoutId = null;
+    }
+
     try {
       const rawCtx = Tone.getContext().rawContext as AudioContext;
       if (rawCtx && rawCtx.state !== 'running') {
@@ -319,6 +375,7 @@ export class AudioEngine {
       }
 
       const state = store.getState();
+      this.lastSyncedAudioSig = '';
       this.syncWithState(state);
       this.startContinuousGenerators();
       this.updateDroneHarmony(state.activeSeedId, state.macros.luminance, true);
@@ -356,13 +413,19 @@ export class AudioEngine {
   }
 
   public stop(suspendContextOvernight = false): void {
+    if (this.stopTimeoutId !== null) {
+      window.clearTimeout(this.stopTimeoutId);
+      this.stopTimeoutId = null;
+    }
+
     if (this.masterGain) {
       const now = Tone.now();
       this.masterGain.gain.cancelScheduledValues(now);
       this.masterGain.gain.rampTo(0.0001, 1.0);
     }
 
-    window.setTimeout(() => {
+    this.stopTimeoutId = window.setTimeout(() => {
+      this.stopTimeoutId = null;
       if (!store.getState().isPlaying) {
         this.dronePadSynth?.releaseAll();
         this.droneSubSynth?.triggerRelease();
@@ -519,9 +582,11 @@ export class AudioEngine {
       this.nostalgiaWaveshaper
     );
 
-    // 7. Central Core Stereo Balance Panner & Dedicated Bilateral EMDR Panner
+    // 7. Central Core Stereo Balance Panner, Spatial Voice Panner & Dedicated Bilateral EMDR Panner
     this.corePanner = new Tone.Panner(state.coreOffset.x).connect(this.nostalgiaDriveGain);
-    this.bilateralPanner = new Tone.Panner(state.coreOffset.x).connect(this.nostalgiaDriveGain);
+    this.bilateralPanner = new Tone.Panner(0).connect(this.nostalgiaDriveGain);
+    this.spatialVoicePanner = new Tone.Panner(state.coreOffset.x).connect(this.bilateralPanner);
+    this.lastCoreOffsetX = state.coreOffset.x;
 
     this.emdrLfo = new Tone.LFO({
       frequency: prac.emdrRateHz,
@@ -545,14 +610,20 @@ export class AudioEngine {
     });
 
     // =========================================================================
-    // CLINICAL TOOL 4 & MIDNIGHT VINYL SUB: SOMATIC SUB-BASS (45-65 Hz) & BINAURAL THETA
+    // CLINICAL TOOL 4 & MIDNIGHT VINYL SUB: SOMATIC SUB-BASS (41-62 Hz) & BINAURAL THETA
     // =========================================================================
+    const initialZone = HarmonicEngine.resolveHarmonicZone(
+      state.activeSeedId,
+      luminance,
+      state.modalRootOverride
+    );
+
     this.somaticSubGain = new Tone.Gain(
       this.computeSomaticSubLinearGain(state)
     ).connect(this.masterGain);
 
     this.somaticSubOsc = new Tone.Oscillator({
-      frequency: resolveSomaticSubBassHz(state.activeSeedId),
+      frequency: resolveSomaticSubBassHz(initialZone.rootNote),
       type: 'sine',
     }).connect(this.somaticSubGain);
 
@@ -592,11 +663,15 @@ export class AudioEngine {
     this.droneBreathLfo = new Tone.LFO({
       frequency: this.breathFreqHz,
       type: 'sine',
+      phase: 0,
       min: minCutoff,
       max: maxCutoff,
     });
+    const breathStartSec = Tone.now();
     this.droneBreathLfo.connect(this.droneFilter.frequency);
-    this.droneBreathLfo.start();
+    this.droneBreathLfo.start(breathStartSec);
+    this.breathPhaseRad = 0;
+    this.lastBreathClockSec = breathStartSec;
 
     this.dronePadSynth = new Tone.PolySynth(Tone.Synth, {
       oscillator: {
@@ -629,8 +704,8 @@ export class AudioEngine {
     // =========================================================================
     // LAYER B (1 & 2): STANDARD VOICES (Felt Piano FM & Glassy Space Pad)
     // =========================================================================
-    this.feltVoiceGain = new Tone.Gain(0.85).connect(this.bilateralPanner);
-    this.glassyVoiceGain = new Tone.Gain(0.4).connect(this.bilateralPanner);
+    this.feltVoiceGain = new Tone.Gain(0.85).connect(this.spatialVoicePanner);
+    this.glassyVoiceGain = new Tone.Gain(0.4).connect(this.spatialVoicePanner);
 
     this.feltPianoSynth = new Tone.PolySynth(Tone.FMSynth, {
       harmonicity: 2.0,
@@ -678,7 +753,7 @@ export class AudioEngine {
     // =========================================================================
     // EXTENSION 1: "MIDNIGHT VINYL" (<600 Hz Rhodes FM + 2.5 kHz Vinyl Crackle)
     // =========================================================================
-    this.rhodesVoiceGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    this.rhodesVoiceGain = new Tone.Gain(0.0).connect(this.spatialVoicePanner);
     this.rhodesLowpassFilter = new Tone.Filter({
       type: 'lowpass',
       frequency: 460 + luminance * 120, // Strictly < 600 Hz warm nocturnal roll-off
@@ -727,7 +802,7 @@ export class AudioEngine {
     // =========================================================================
     // EXTENSION 2: "SINGING BOWLS" (4 Inharmonic Modes: 1.0, 2.756, 5.404, 8.933)
     // =========================================================================
-    this.bowlVoiceGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    this.bowlVoiceGain = new Tone.Gain(0.0).connect(this.spatialVoicePanner);
     const modalVolumesDb = [-10, -17, -23, -29];
     const modalDecaysSec = [14.0, 11.2, 8.4, 5.8];
 
@@ -736,9 +811,9 @@ export class AudioEngine {
         oscillator: { type: 'sine' },
         envelope: {
           attack: 0.08, // Soft felt-mallet attack (0.08s)
-          decay: modalDecaysSec[idx], // Ultra-long 14s fundamental modal decay
-          sustain: 0.0,
-          release: modalDecaysSec[idx],
+          decay: 0.1,
+          sustain: 1.0,
+          release: modalDecaysSec[idx], // True exponential modal ring-out (up to 14s) without doubling voice hold time
         },
         volume: modalVolumesDb[idx],
       }).connect(this.bowlVoiceGain!);
@@ -747,7 +822,7 @@ export class AudioEngine {
     // =========================================================================
     // EXTENSION 3: "CATHEDRAL CHOIR" (3 Parallel Vowel Formant Filters: 'Ahh' <-> 'Ooo')
     // =========================================================================
-    this.choirFormantBusGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    this.choirFormantBusGain = new Tone.Gain(0.0).connect(this.spatialVoicePanner);
 
     const f1 = new Tone.Filter({
       type: 'bandpass',
@@ -800,7 +875,7 @@ export class AudioEngine {
     // =========================================================================
     // EXTENSION 4: "BOWED GLASS & STRINGS" (3.0s Bowed Swell + Woody Body Bank + 4.5Hz Vibrato)
     // =========================================================================
-    this.bowedStringsBusGain = new Tone.Gain(0.0).connect(this.bilateralPanner);
+    this.bowedStringsBusGain = new Tone.Gain(0.0).connect(this.spatialVoicePanner);
 
     // Delayed organic vibrato at 4.5 Hz
     this.bowedVibrato = new Tone.Vibrato({
@@ -1245,9 +1320,7 @@ export class AudioEngine {
     }
 
     if (this.somaticSubOsc) {
-      const subHz = modalRootOverride
-        ? safeFinite(Tone.Frequency(`${modalRootOverride}1`).toFrequency(), resolveSomaticSubBassHz(seedId))
-        : resolveSomaticSubBassHz(seedId);
+      const subHz = resolveSomaticSubBassHz(zone.rootNote);
       this.somaticSubOsc.frequency.rampTo(subHz, 1.8);
     }
     if (this.emdrPulseOsc) {
@@ -1270,6 +1343,37 @@ export class AudioEngine {
     this.breathFreqHz = this.computeBreathingRateHz(viscosity);
 
     if (!this.isInitialized) return;
+
+    const sleepFadeRatio =
+      state.sleepTimerRemainingSec !== null && state.sleepTimerRemainingSec <= 60
+        ? state.sleepTimerRemainingSec / 60
+        : 1;
+
+    const audioSig = [
+      state.isPlaying ? 1 : 0,
+      state.mode,
+      state.activeSeedId,
+      state.modalRootOverride ?? '',
+      state.masterVolume.toFixed(3),
+      sleepFadeRatio.toFixed(3),
+      state.coreOffset.x.toFixed(3),
+      luminance.toFixed(3),
+      fog.toFixed(3),
+      viscosity.toFixed(3),
+      nostalgia.toFixed(3),
+      prac.vocalCarvingEnabled ? 1 : 0,
+      prac.vocalCarvingDepthDb.toFixed(2),
+      prac.emdrBilateralEnabled ? 1 : 0,
+      prac.emdrRateHz.toFixed(3),
+      prac.emdrStereoWidth.toFixed(3),
+      prac.somaticSubBassLevel.toFixed(3),
+      prac.binauralThetaEnabled ? 1 : 0,
+    ].join('|');
+
+    if (audioSig === this.lastSyncedAudioSig) {
+      return;
+    }
+    this.lastSyncedAudioSig = audioSig;
 
     if (state.isPlaying) {
       this.updateDroneHarmony(state.activeSeedId, luminance, false);
@@ -1340,48 +1444,58 @@ export class AudioEngine {
     }
 
     // Bowed Glass & Strings 3.0s attack & 4.5Hz Vibrato depth
-    if (this.bowedStringSynth) {
-      this.bowedStringSynth.set({
-        envelope: {
-          attack: 2.6 + viscosity * 0.8, // ~3.0s bowed swell
-          decay: 2.4,
-          sustain: 0.78,
-          release: 4.5 + viscosity * 4.5,
-        },
-      });
-    }
     if (this.bowedVibrato && this.woodyBodyFilters) {
       this.bowedVibrato.depth.rampTo(0.12 + nostalgia * 0.14, RAMP_TIME_SEC);
       this.woodyBodyFilters[2].frequency.rampTo(1650 + luminance * 550, RAMP_TIME_SEC);
     }
 
-    if (this.feltPianoSynth) {
-      this.feltPianoSynth.set({
-        modulationIndex: 1.2 + luminance * 1.4,
-        envelope: {
-          attack: this.computeFeltAttack(viscosity),
-          decay: 1.35 + viscosity * 1.8,
-          sustain: 0.08,
-          release: this.computeFeltRelease(viscosity),
-        },
-      });
-    }
+    // Only reconfigure PolySynth voice pools when Luminance or Viscosity meaningfully changed
+    if (
+      Math.abs(luminance - this.lastSynthEnvelopeLum) >= 0.002 ||
+      Math.abs(viscosity - this.lastSynthEnvelopeVisc) >= 0.002
+    ) {
+      this.lastSynthEnvelopeLum = luminance;
+      this.lastSynthEnvelopeVisc = viscosity;
 
-    if (this.glassyPadSynth) {
-      this.glassyPadSynth.set({
-        envelope: {
-          attack: this.computeGlassyAttack(viscosity),
-          decay: 2.4,
-          sustain: 0.65,
-          release: this.computeGlassyRelease(viscosity),
-        },
-        modulationEnvelope: {
-          attack: 1.2 + viscosity * 1.8,
-          decay: 2.0,
-          sustain: 0.7,
-          release: 3.5 + viscosity * 3.0,
-        },
-      });
+      if (this.bowedStringSynth) {
+        this.bowedStringSynth.set({
+          envelope: {
+            attack: 2.6 + viscosity * 0.8, // ~3.0s bowed swell
+            decay: 2.4,
+            sustain: 0.78,
+            release: 4.5 + viscosity * 4.5,
+          },
+        });
+      }
+
+      if (this.feltPianoSynth) {
+        this.feltPianoSynth.set({
+          modulationIndex: 1.2 + luminance * 1.4,
+          envelope: {
+            attack: this.computeFeltAttack(viscosity),
+            decay: 1.35 + viscosity * 1.8,
+            sustain: 0.08,
+            release: this.computeFeltRelease(viscosity),
+          },
+        });
+      }
+
+      if (this.glassyPadSynth) {
+        this.glassyPadSynth.set({
+          envelope: {
+            attack: this.computeGlassyAttack(viscosity),
+            decay: 2.4,
+            sustain: 0.65,
+            release: this.computeGlassyRelease(viscosity),
+          },
+          modulationEnvelope: {
+            attack: 1.2 + viscosity * 1.8,
+            decay: 2.0,
+            sustain: 0.7,
+            release: 3.5 + viscosity * 3.0,
+          },
+        });
+      }
     }
 
     // 3. Nostalgia -> 0.8Hz Wow & Flutter Pitch Drift + Soft-Clip Warmth + Layer C Noise Floor
@@ -1426,13 +1540,21 @@ export class AudioEngine {
         this.emdrPulseLfo.min = 0.02 * prac.emdrStereoWidth;
         this.emdrPulseLfo.max = 0.22 * prac.emdrStereoWidth;
 
+        // Keep spatial voice panner centered so Bilateral EMDR governs full L<->R sweep
+        this.spatialVoicePanner?.pan.rampTo(0, RAMP_TIME_SEC);
+
+        const startSec = Tone.now();
         if (this.emdrLfo.state !== 'started') {
+          this.emdrLfo.phase = 0;
           this.emdrLfo.connect(this.bilateralPanner.pan);
-          this.emdrLfo.start();
+          this.emdrLfo.start(startSec);
+          this.emdrPhaseRad = 0;
+          this.lastEmdrClockSec = startSec;
         }
         if (this.emdrPulseLfo.state !== 'started') {
+          this.emdrPulseLfo.phase = 0;
           this.emdrPulseLfo.connect(this.emdrPulseGain.gain);
-          this.emdrPulseLfo.start();
+          this.emdrPulseLfo.start(startSec);
         }
       } else {
         if (this.emdrLfo.state === 'started') {
@@ -1443,11 +1565,21 @@ export class AudioEngine {
           this.emdrPulseLfo.stop();
           this.emdrPulseLfo.disconnect();
         }
+        this.emdrPhaseRad = 0;
+        this.lastEmdrClockSec = null;
         this.emdrPulseGain.gain.rampTo(0.0, RAMP_TIME_SEC);
-        this.bilateralPanner.pan.rampTo(
-          Math.max(-1, Math.min(1, state.coreOffset.x)),
-          RAMP_TIME_SEC
-        );
+        this.bilateralPanner.pan.rampTo(0, RAMP_TIME_SEC);
+
+        if (
+          this.spatialVoicePanner &&
+          Math.abs(state.coreOffset.x - this.lastCoreOffsetX) > 0.002
+        ) {
+          this.lastCoreOffsetX = state.coreOffset.x;
+          this.spatialVoicePanner.pan.rampTo(
+            Math.max(-1, Math.min(1, state.coreOffset.x)),
+            RAMP_TIME_SEC
+          );
+        }
       }
     }
 
@@ -1497,6 +1629,15 @@ export class AudioEngine {
       return;
     }
 
+    const emdrActive = state.mode === 'practitioner' && state.practitioner.emdrBilateralEnabled;
+    if (!emdrActive && this.spatialVoicePanner) {
+      const targetPan = Math.max(
+        -0.95,
+        Math.min(0.95, safeFinite(payload.pan, state.coreOffset.x))
+      );
+      this.spatialVoicePanner.pan.rampTo(targetPan, 0.08);
+    }
+
     const now = Tone.now();
     const { viscosity } = state.macros;
     const timbre = payload.timbre;
@@ -1524,14 +1665,14 @@ export class AudioEngine {
 
     if (timbre === 'singing-bowls') {
       // 2. Singing Bowls: 4 Inharmonic Modal Sine Partials [1.0, 2.756, 5.404, 8.933]
+      // Brief 0.12s felt-mallet strike gate lets each mode ring naturally via its 5.8s-14s release envelope
       const baseFreq = payload.frequency;
-      const modalDurations = [13.5, 10.5, 7.8, 5.2];
       SINGING_BOWL_RATIOS.forEach((ratio, idx) => {
         const partialFreq = baseFreq * ratio;
         if (partialFreq < 9500 && this.bowlModalSynths[idx]) {
           this.bowlModalSynths[idx].triggerAttackRelease(
             partialFreq,
-            modalDurations[idx],
+            0.12,
             now,
             payload.velocity * 0.65
           );
@@ -1612,10 +1753,19 @@ export class AudioEngine {
     note: string,
     durationSec: number,
     velocity: number,
-    _pan: number
+    pan: number
   ): void {
     const state = store.getState();
     if (!this.isInitialized || !state.isPlaying) return;
+
+    const emdrActive = state.mode === 'practitioner' && state.practitioner.emdrBilateralEnabled;
+    if (!emdrActive && this.spatialVoicePanner) {
+      const targetPan = Math.max(
+        -0.95,
+        Math.min(0.95, state.coreOffset.x * 0.5 + safeFinite(pan, 0))
+      );
+      this.spatialVoicePanner.pan.rampTo(targetPan, 0.08);
+    }
 
     const now = Tone.now();
     const safeVel = Math.max(0.12, Math.min(0.38, safeFinite(velocity, 0.24)));
@@ -1627,7 +1777,7 @@ export class AudioEngine {
 
     if (state.activeSeedId === 'singing-bowls' && this.bowlModalSynths[0]) {
       const freq = safeFinite(Tone.Frequency(note).toFrequency(), 440);
-      this.bowlModalSynths[0].triggerAttackRelease(freq, durationSec * 2.2, now, safeVel * 0.75);
+      this.bowlModalSynths[0].triggerAttackRelease(freq, 0.12, now, safeVel * 0.75);
       return;
     }
 
@@ -1663,6 +1813,9 @@ export class AudioEngine {
 
   public dispose(): void {
     this.serendipityEngine.dispose();
+    if (this.stopTimeoutId !== null) {
+      window.clearTimeout(this.stopTimeoutId);
+    }
     if (this.sessionTickInterval !== null) {
       window.clearInterval(this.sessionTickInterval);
     }
@@ -1670,6 +1823,9 @@ export class AudioEngine {
       window.clearInterval(this.crackleTickInterval);
     }
     this.stopContinuousGenerators();
+    this.spatialVoicePanner?.dispose();
+    this.bilateralPanner?.dispose();
+    this.corePanner?.dispose();
     this.wowFlutterLfo?.dispose();
     this.droneBreathLfo?.dispose();
     this.textureSweepLfo?.dispose();

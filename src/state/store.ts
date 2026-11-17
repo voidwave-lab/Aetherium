@@ -1229,10 +1229,22 @@ class AetheriumStore {
   }
 
   public updateRecordingState(partial: Partial<RecordingState>): void {
+    const curr = this.state.recording;
+    let changed = false;
+    for (const key of Object.keys(partial) as Array<keyof RecordingState>) {
+      if (curr[key] !== partial[key]) {
+        changed = true;
+        break;
+      }
+    }
+    if (!changed) {
+      return;
+    }
+
     this.state = {
       ...this.state,
       recording: {
-        ...this.state.recording,
+        ...curr,
         ...partial,
       },
     };
@@ -1311,31 +1323,10 @@ class AetheriumStore {
           ? (parsed.active_seed_id as SeedId)
           : this.state.activeSeedId;
 
-      const macros: MacroParams = {
-        luminance: Number(parsed.macro_params?.luminance ?? 0.4),
-        fog: Number(parsed.macro_params?.fog ?? 0.5),
-        viscosity: Number(parsed.macro_params?.viscosity ?? 0.5),
-        nostalgia: Number(parsed.macro_params?.nostalgia ?? 0.4),
-        rarity: Number(parsed.macro_params?.rarity ?? 0.2),
-        serendipity: Number(parsed.macro_params?.serendipity ?? 0.25),
+      const clampFinite = (val: unknown, min: number, max: number, fallback: number): number => {
+        const n = Number(val);
+        return Number.isFinite(n) ? Math.max(min, Math.min(max, n)) : fallback;
       };
-
-      const satellites: SatelliteNode[] = Array.isArray(parsed.satellites)
-        ? parsed.satellites.slice(0, MAX_SATELLITES).map((s: Record<string, unknown>, idx: number) => {
-            const semiMajorAxis = Math.max(0.14, Math.min(0.94, Number(s.semi_major_axis ?? 0.45)));
-            return {
-              id: String(s.id ?? `sat-loaded-${idx}-${Date.now()}`),
-              semiMajorAxis,
-              eccentricity: Math.max(0.02, Math.min(0.3, Number(s.eccentricity ?? 0.1))),
-              angle: Number(s.angle ?? 0),
-              argumentOfPeriapsis: Number(s.argument_of_periapsis ?? 0),
-              octave: radiusToOctave(semiMajorAxis),
-              scaleDegree: Math.max(0, Number(s.scale_degree ?? idx)),
-              lastTriggeredAt: 0,
-              lastTriggerSilenced: false,
-            };
-          })
-        : createSatellitesForPreset(SEED_PRESETS[seedId]);
 
       const pc = parsed.practitioner_config;
       const updatedPractitioner: PractitionerConfig = pc
@@ -1344,10 +1335,7 @@ class AetheriumStore {
             vocalCarvingEnabled: Boolean(
               pc.vocal_carving_enabled ?? this.state.practitioner.vocalCarvingEnabled
             ),
-            vocalCarvingDepthDb: Math.max(
-              -12,
-              Math.min(0, Number(pc.vocal_carving_depth_db ?? -8.5))
-            ),
+            vocalCarvingDepthDb: clampFinite(pc.vocal_carving_depth_db, -12, 0, -8.5),
             isoDurationMinutes: ([20, 45, 50, 60].includes(Number(pc.iso_duration_minutes))
               ? Number(pc.iso_duration_minutes)
               : 50) as IsoDurationMinutes,
@@ -1360,26 +1348,57 @@ class AetheriumStore {
             emdrBilateralEnabled: Boolean(
               pc.emdr_bilateral_enabled ?? this.state.practitioner.emdrBilateralEnabled
             ),
-            emdrRateHz: Math.max(0.2, Math.min(1.5, Number(pc.emdr_rate_hz ?? 0.45))),
-            emdrStereoWidth: Math.max(0, Math.min(1, Number(pc.emdr_stereo_width ?? 0.85))),
-            somaticSubBassLevel: Math.max(
-              0,
-              Math.min(1, Number(pc.somatic_sub_bass_level ?? 0.35))
-            ),
+            emdrRateHz: clampFinite(pc.emdr_rate_hz, 0.2, 1.5, 0.45),
+            emdrStereoWidth: clampFinite(pc.emdr_stereo_width, 0, 1, 0.85),
+            somaticSubBassLevel: clampFinite(pc.somatic_sub_bass_level, 0, 1, 0.35),
             binauralThetaEnabled: Boolean(
               pc.binaural_theta_enabled ?? this.state.practitioner.binauralThetaEnabled
             ),
           }
         : this.state.practitioner;
 
+      const emdrClamped =
+        this.state.mode === 'practitioner' && updatedPractitioner.emdrBilateralEnabled;
+
+      const macros: MacroParams = {
+        luminance: clampFinite(parsed.macro_params?.luminance, 0, 1, 0.4),
+        fog: clampFinite(parsed.macro_params?.fog, 0, 1, 0.5),
+        viscosity: clampFinite(parsed.macro_params?.viscosity, 0, 1, 0.5),
+        nostalgia: clampFinite(parsed.macro_params?.nostalgia, 0, 1, 0.4),
+        rarity: clampFinite(parsed.macro_params?.rarity, 0, 1, 0.2),
+        serendipity: emdrClamped
+          ? 0.0
+          : clampFinite(parsed.macro_params?.serendipity, 0, 1, 0.25),
+      };
+
+      const maxAllowed = this.state.maxSatellites;
+      const satellites: SatelliteNode[] = Array.isArray(parsed.satellites)
+        ? parsed.satellites.slice(0, maxAllowed).map((s: Record<string, unknown>, idx: number) => {
+            const semiMajorAxis = clampFinite(s.semi_major_axis, 0.14, 0.94, 0.45);
+            return {
+              id: String(s.id ?? `sat-loaded-${idx}-${Date.now()}`),
+              semiMajorAxis,
+              eccentricity: clampFinite(s.eccentricity, 0.02, 0.3, 0.1),
+              angle: clampFinite(s.angle, -Math.PI, Math.PI, 0),
+              argumentOfPeriapsis: clampFinite(s.argument_of_periapsis, -Math.PI * 2, Math.PI * 2, 0),
+              octave: radiusToOctave(semiMajorAxis),
+              scaleDegree: Math.max(0, Math.floor(clampFinite(s.scale_degree, 0, 64, idx))),
+              lastTriggeredAt: 0,
+              lastTriggerSilenced: false,
+            };
+          })
+        : createSatellitesForPreset(SEED_PRESETS[seedId]).slice(0, maxAllowed);
+
       this.state = {
         ...this.state,
         activeSeedId: seedId,
+        modalRootOverride: emdrClamped ? null : this.state.modalRootOverride,
+        modalRootDegree: emdrClamped ? null : this.state.modalRootDegree,
         macros,
         practitioner: updatedPractitioner,
         coreOffset: {
-          x: Math.max(-1, Math.min(1, Number(parsed.core_offset?.x ?? 0))),
-          y: Math.max(-1, Math.min(1, Number(parsed.core_offset?.y ?? 0))),
+          x: clampFinite(parsed.core_offset?.x, -1, 1, 0),
+          y: clampFinite(parsed.core_offset?.y, -1, 1, 0),
         },
         satellites,
       };

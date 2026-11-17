@@ -35,12 +35,22 @@ function isTauriRuntime(): boolean {
   return typeof window !== 'undefined' && '__TAURI_IPC__' in window;
 }
 
+function escapeHtml(raw: string): string {
+  return raw
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
 const ISO_DURATIONS: IsoDurationMinutes[] = [20, 45, 50, 60];
 
 export class PractitionerDock {
   private root: HTMLElement;
   private fileInput: HTMLInputElement;
   private audioEngine: AudioEngine;
+  private lastPresetsSignature = '__init__';
 
   constructor(container: HTMLElement, audioEngine: AudioEngine) {
     this.audioEngine = audioEngine;
@@ -1032,9 +1042,11 @@ export class PractitionerDock {
       }
     }
 
-    // 5. Render Saved Local Session Presets
+    // 5. Render Saved Local Session Presets (only rebuild DOM when preset slots actually change)
     const listContainer = this.root.querySelector('#saved-presets-list');
-    if (listContainer) {
+    const presetsSignature = state.savedPresets.map((pItem) => `${pItem.id}:${pItem.name}`).join('|');
+    if (listContainer && presetsSignature !== this.lastPresetsSignature) {
+      this.lastPresetsSignature = presetsSignature;
       if (state.savedPresets.length === 0) {
         listContainer.innerHTML = `
           <div class="text-[10px] font-mono text-slate-500 py-1 text-center">
@@ -1043,29 +1055,32 @@ export class PractitionerDock {
         `;
       } else {
         listContainer.innerHTML = state.savedPresets
-          .map(
-            (item) => `
+          .map((item) => {
+            const safeId = escapeHtml(item.id);
+            const safeName = escapeHtml(item.name);
+            const safeTime = escapeHtml(item.savedAt);
+            return `
               <div class="flex items-center justify-between gap-1.5 px-2 py-1 rounded bg-slate-950/65 border border-slate-800/80">
                 <button
                   type="button"
-                  data-load-preset-id="${item.id}"
+                  data-load-preset-id="${safeId}"
                   class="flex-1 text-left truncate text-[11px] text-slate-200 hover:text-cyan-300 transition-colors"
-                  title="Restore ${item.name}"
+                  title="Restore ${safeName}"
                 >
-                  ${item.name}
-                  <span class="text-[9px] font-mono text-slate-500 ml-1">${item.savedAt}</span>
+                  ${safeName}
+                  <span class="text-[9px] font-mono text-slate-500 ml-1">${safeTime}</span>
                 </button>
                 <button
                   type="button"
-                  data-delete-preset-id="${item.id}"
+                  data-delete-preset-id="${safeId}"
                   title="Delete slot"
                   class="text-slate-500 hover:text-rose-400 px-1 text-xs"
                 >
                   ×
                 </button>
               </div>
-            `
-          )
+            `;
+          })
           .join('');
 
         listContainer

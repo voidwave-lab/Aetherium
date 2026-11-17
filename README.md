@@ -266,7 +266,7 @@ flowchart LR
         WS["Nostalgia Soft-Clip WaveShaper\n(tanh saturation curve)"]
         TD["Nostalgia Tape Delay\n(0.8Hz Wow & Flutter LFO)"]
         PP["Stereo PingPongDelay\n(Viscosity + Fog feedback)"]
-        RV["Freeverb + Convolution Reverb\n(2s to 18s effective decay)"]
+        RV["Long-Tail FeedbackDelay Diffuser\n+ Convolution Reverb (2s-18s)"]
         LPF["Fog Master Low-Pass Filter\n(12kHz → 1.2kHz roll-off)"]
     end
 
@@ -298,12 +298,12 @@ flowchart LR
    - **Engine 3 (Midnight Vinyl — Nocturnal Lo-Fi / Future Garage):** Warm Rhodes FM electric piano dyads (`harmonicity: 1.0`) routed through a dedicated `24 dB/oct` low-pass filter (`< 600 Hz`), paired with an automatic `55 Hz` (`45–65 Hz`) sub-bass sine anchor and a stochastic micro-impulse generator filtered through a `2.5 kHz` bandpass resonator (`Q = 3.4`) for vinyl crackle and nocturnal rain.
    - **Engine 4 (Singing Bowls — Inharmonic Modal Synthesis):** 4 parallel `Tone.PolySynth` sine banks tuned to Euler-Bernoulli metallic mode ratios ($[1.000,\ 2.756,\ 5.404,\ 8.933] \times f_0$) with a `0.08s` felt-mallet attack and staggered ultra-long modal decays up to `14.0s`.
    - **Engine 5 (Cathedral Choir — Vowel Formant Synthesis):** Routes a 4-voice detuned sawtooth choir synth and a continuous send from the Core Drone through 3 parallel high-$Q$ bandpass filters ($F_1, F_2, F_3$) that continuously morph between Vowel `'Ahh'` ($[700\text{ Hz},\ 1220\text{ Hz},\ 2600\text{ Hz}]$) and Vowel `'Ooo'` ($[450\text{ Hz},\ 800\text{ Hz},\ 2830\text{ Hz}]$).
-   - **Engine 6 (Bowed Glass & Strings — Post-Rock / Cinematic):** Combines a `3.0s` slow-attack AM bowed `fatsawtooth`/`triangle` synth and a physical-modeling Karplus-Strong `Tone.PluckSynth` routed through a 3-band woody body-resonance filter bank ($250\text{ Hz}$ cavity, $520\text{ Hz}$ bridge, $1850\text{ Hz}$ rosin sheen) with a `4.5 Hz` organic vibrato.
+   - **Engine 6 (Bowed Glass & Strings — Post-Rock / Cinematic):** Combines a `3.0s` slow-attack AM bowed `fatsawtooth`/`triangle` synth and a sympathetic plucked-string `Tone.FMSynth` model routed through a 3-band woody body-resonance filter bank ($250\text{ Hz}$ cavity, $520\text{ Hz}$ bridge, $1850\text{ Hz}$ rosin sheen) with a `4.5 Hz` organic vibrato.
 3. **Layer C — Organic Texture Generator:**
    - Dual procedural `Tone.Noise('pink')` and `Tone.Noise('brown')` generators routed through a `12 dB/oct` bandpass filter (`Q = 1.8`) swept continuously between `240 Hz` and `1,180 Hz` by a `0.065 Hz` LFO, emulating distant rain on felt, wind through pines, or warm analog room tone.
 
 ### Poetic Macro DSP Equations
-- **Fog ($F \in [0, 1]$):** Controls the wet mix and room size of a cascaded `Tone.Freeverb` + `Tone.Reverb` network (scaling effective decay from $2\text{s}$ up to $18\text{s}$) while exponentially rolling off the Master Low-Pass Filter cutoff from $12\text{ kHz}$ down to $1.2\text{ kHz}$:
+- **Fog ($F \in [0, 1]$):** Controls the wet mix and feedback of a cascaded `Tone.FeedbackDelay` diffuser + `Tone.Reverb` network (scaling effective decay from $2\text{s}$ up to $18\text{s}$) while exponentially rolling off the Master Low-Pass Filter cutoff from $12\text{ kHz}$ down to $1.2\text{ kHz}$:
 
 $$f_{\text{fog}}(F, L) = \text{clamp}\left(12000 \cdot \left(\frac{1200}{12000}\right)^F \cdot (0.75 + 0.50L),\ 950,\ 14000\right)\text{ Hz}$$
 

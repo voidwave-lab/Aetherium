@@ -293,7 +293,7 @@ export class PoeticDock {
               </span>
             </button>
 
-            <!-- Format B: Mobile Compact (.webm) -->
+            <!-- Format B: Mobile Compact (.webm / .m4a) -->
             <button
               type="button"
               id="btn-save-format-webm"
@@ -301,7 +301,7 @@ export class PoeticDock {
             >
               <div>
                 <div class="text-xs font-semibold text-emerald-100 flex items-center gap-2">
-                  <span>Mobile Compact (.webm)</span>
+                  <span id="export-compact-title">Mobile Compact (.webm)</span>
                   <span id="export-size-webm" class="text-[10px] font-mono text-emerald-300/90"></span>
                 </div>
                 <div class="text-[11px] text-slate-300 mt-0.5">
@@ -309,7 +309,10 @@ export class PoeticDock {
                 </div>
                 <div id="export-filename-webm" class="text-[10px] font-mono text-emerald-300/80 mt-1 truncate"></div>
               </div>
-              <span class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 shrink-0 group-hover:bg-emerald-500/45">
+              <span
+                id="export-compact-cta"
+                class="px-3 py-1.5 rounded-lg text-[11px] font-mono bg-emerald-500/30 text-emerald-100 border border-emerald-400/40 shrink-0 group-hover:bg-emerald-500/45"
+              >
                 Save .WEBM
               </span>
             </button>
@@ -540,9 +543,25 @@ export class PoeticDock {
           wavNameEl.textContent = buildPoeticAudioFilename(seedId, 'wav', targetMins);
         }
 
+        const compactInfo = this.audioEngine.recorder.getCompactFormatInfo();
+
+        const compactTitleEl = this.root.querySelector('#export-compact-title');
+        if (compactTitleEl) {
+          compactTitleEl.textContent = `Mobile Compact (.${compactInfo.extension})`;
+        }
+
+        const compactCtaEl = this.root.querySelector('#export-compact-cta');
+        if (compactCtaEl) {
+          compactCtaEl.textContent = `Save .${compactInfo.badgeLabel}`;
+        }
+
         const webmNameEl = this.root.querySelector('#export-filename-webm');
         if (webmNameEl) {
-          webmNameEl.textContent = buildPoeticAudioFilename(seedId, 'webm', targetMins);
+          webmNameEl.textContent = buildPoeticAudioFilename(
+            seedId,
+            compactInfo.extension,
+            targetMins
+          );
         }
 
         const wavSizeEl = this.root.querySelector('#export-size-wav');

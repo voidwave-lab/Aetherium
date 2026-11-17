@@ -45,6 +45,10 @@
       "path": {
         "all": true
       },
+      "shell": {
+        "all": false,
+        "open": "^https://.*"
+      },
       "window": {
         "all": false,
         "close": true,

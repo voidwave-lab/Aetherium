@@ -94,8 +94,8 @@ const SEED_ROOT_MAP: Record<
     primaryTimbre: 'cathedral-choir',
   },
   'bowed-glass-strings': {
-    darkRoot: 'C',
-    brightRoot: 'D',
+    darkRoot: 'D',
+    brightRoot: 'G',
     primaryTimbre: 'bowed-strings',
   },
 };

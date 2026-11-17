@@ -141,6 +141,7 @@ export class SanctuaryCanvas {
   private ctx: CanvasRenderingContext2D;
   private grainCanvas: HTMLCanvasElement;
   private grainCtx: CanvasRenderingContext2D;
+  private grainPattern: CanvasPattern | null = null;
   private audioEngine: AudioEngine;
   private maxSatellites: number;
   private isPocketMode: boolean;
@@ -251,6 +252,7 @@ export class SanctuaryCanvas {
       data[i + 3] = 36;
     }
     this.grainCtx.putImageData(imgData, 0, 0);
+    this.grainPattern = this.ctx.createPattern(this.grainCanvas, 'repeat');
   }
 
   private handleResize = (): void => {
@@ -1176,20 +1178,28 @@ export class SanctuaryCanvas {
     const glowWidth = 10 + fog * 22 + this.meridianFlash * 18;
     const glowGrad = this.ctx.createLinearGradient(cx, bottomY, cx, topY);
     const baseAlpha = 0.18 + luminance * 0.16 + this.meridianFlash * 0.35;
-    glowGrad.addColorStop(0, `hsla(${accentHue}, 85%, 70%, ${baseAlpha * 0.25})`);
-    glowGrad.addColorStop(0.5, `hsla(${accentHue}, 90%, 75%, ${baseAlpha})`);
-    glowGrad.addColorStop(1, `hsla(${accentHue}, 85%, 70%, 0.02)`);
+    glowGrad.addColorStop(0, `hsla(${accentHue}, 85%, 70%, ${baseAlpha * 0.22})`);
+    glowGrad.addColorStop(0.5, `hsla(${accentHue}, 90%, 75%, ${baseAlpha * 0.45})`);
+    glowGrad.addColorStop(1, `hsla(${accentHue}, 85%, 70%, 0.01)`);
 
-    this.ctx.strokeStyle = glowGrad;
-    this.ctx.lineWidth = glowWidth;
+    // Multi-pass soft halo (zero per-frame CSS blur filter rasterization overhead on Retina/WebKit)
     this.ctx.lineCap = 'round';
-    this.ctx.filter = `blur(${4 + fog * 8}px)`;
+    this.ctx.strokeStyle = glowGrad;
+    this.ctx.lineWidth = glowWidth * 1.65;
+    this.ctx.globalAlpha = 0.38;
     this.ctx.beginPath();
     this.ctx.moveTo(cx, bottomY);
     this.ctx.lineTo(cx, topY);
     this.ctx.stroke();
 
-    this.ctx.filter = 'none';
+    this.ctx.globalAlpha = 0.72;
+    this.ctx.lineWidth = glowWidth * 0.65;
+    this.ctx.beginPath();
+    this.ctx.moveTo(cx, bottomY);
+    this.ctx.lineTo(cx, topY);
+    this.ctx.stroke();
+
+    this.ctx.globalAlpha = 1.0;
     const coreGrad = this.ctx.createLinearGradient(cx, bottomY, cx, topY);
     coreGrad.addColorStop(0, `hsla(${accentHue}, 80%, 82%, 0.15)`);
     coreGrad.addColorStop(
@@ -1290,18 +1300,28 @@ export class SanctuaryCanvas {
     const trail = this.trails.get(sat.id);
     if (trail && trail.length > 2) {
       this.ctx.save();
-      if (fog > 0.35) {
-        this.ctx.filter = `blur(${fog * 3.5}px)`;
-      }
+      this.ctx.lineCap = 'round';
+      const drawMistHalo = fog > 0.25;
+      const lightness = 66 + luminance * 20;
+
       for (let i = 1; i < trail.length; i++) {
         const prev = trail[i - 1];
         const curr = trail[i];
         const progress = i / trail.length;
         const alpha = progress * progress * (0.24 + viscosity * 0.52);
+        const coreWidth = 1.0 + progress * (2.5 + viscosity * 2.5);
 
-        this.ctx.strokeStyle = `hsla(${accentHue}, 85%, ${66 + luminance * 20}%, ${alpha})`;
-        this.ctx.lineWidth = 1.0 + progress * (2.5 + viscosity * 2.5);
-        this.ctx.lineCap = 'round';
+        if (drawMistHalo) {
+          this.ctx.strokeStyle = `hsla(${accentHue}, 85%, ${lightness}%, ${alpha * fog * 0.28})`;
+          this.ctx.lineWidth = coreWidth * (2.0 + fog * 2.2);
+          this.ctx.beginPath();
+          this.ctx.moveTo(prev.x, prev.y);
+          this.ctx.lineTo(curr.x, curr.y);
+          this.ctx.stroke();
+        }
+
+        this.ctx.strokeStyle = `hsla(${accentHue}, 85%, ${lightness}%, ${alpha * (1 - fog * 0.3)})`;
+        this.ctx.lineWidth = coreWidth;
         this.ctx.beginPath();
         this.ctx.moveTo(prev.x, prev.y);
         this.ctx.lineTo(curr.x, curr.y);
@@ -1803,8 +1823,9 @@ export class SanctuaryCanvas {
     this.ctx.fillStyle = vigGrad;
     this.ctx.fillRect(0, 0, this.width, this.height);
 
-    const pattern = this.ctx.createPattern(this.grainCanvas, 'repeat');
+    const pattern = this.grainPattern ?? this.ctx.createPattern(this.grainCanvas, 'repeat');
     if (pattern) {
+      this.grainPattern = pattern;
       const shiftX = Math.floor((timeSec * 97) % this.grainCanvas.width);
       const shiftY = Math.floor((timeSec * 73) % this.grainCanvas.height);
       this.ctx.translate(shiftX, shiftY);

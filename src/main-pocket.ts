@@ -115,10 +115,8 @@ function createPocketAwakenOverlay(
 
 function registerServiceWorker(): void {
   if ('serviceWorker' in navigator) {
-    window.addEventListener('load', () => {
-      navigator.serviceWorker.register('./sw.js').catch(() => {
-        // Ignore service worker registration errors in dev or restricted webviews
-      });
+    navigator.serviceWorker.register('./sw.js').catch(() => {
+      // Ignore service worker registration errors in dev or restricted webviews
     });
   }
 }

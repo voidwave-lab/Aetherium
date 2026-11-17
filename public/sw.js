@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Voidwave Lab
 // Offline-first Service Worker for Aetherium Pocket (PWA / Mobile Web)
 
-const CACHE_NAME = 'aetherium-pocket-v1';
+const CACHE_NAME = 'aetherium-pocket-v2';
 const PRECACHE_URLS = [
   './pocket.html',
   './manifest.json',
@@ -12,11 +12,55 @@ const PRECACHE_URLS = [
   './icons/apple-touch-icon.png',
 ];
 
+/**
+ * Discovers Vite's content-hashed JS and CSS bundle URLs referenced inside `pocket.html`
+ * during the Service Worker install phase so Aetherium Pocket boots 100% offline even
+ * immediately after the very first visit (without requiring a second online reload).
+ */
+async function precacheAppShellAndAssets(cache) {
+  await cache.addAll(PRECACHE_URLS);
+
+  try {
+    const htmlRes = await fetch('./pocket.html', { cache: 'no-cache' });
+    if (!htmlRes || !htmlRes.ok) return;
+
+    await cache.put('./pocket.html', htmlRes.clone());
+    const htmlText = await htmlRes.text();
+    const assetUrls = new Set();
+    const attrRegex = /(?:src|href)=["']([^"']+)["']/gi;
+    let match;
+    while ((match = attrRegex.exec(htmlText)) !== null) {
+      const ref = match[1];
+      if (
+        ref &&
+        !ref.startsWith('http:') &&
+        !ref.startsWith('https:') &&
+        !ref.startsWith('data:') &&
+        (ref.endsWith('.js') || ref.endsWith('.css') || ref.includes('/assets/'))
+      ) {
+        assetUrls.add(ref);
+      }
+    }
+
+    if (assetUrls.size > 0) {
+      await Promise.all(
+        Array.from(assetUrls).map((url) =>
+          cache.add(url).catch(() => {
+            // Ignore dev-server virtual module paths (e.g. /src/main-pocket.ts during `npm run dev`)
+          })
+        )
+      );
+    }
+  } catch {
+    // Ignore offline install fallback errors
+  }
+}
+
 self.addEventListener('install', (event) => {
   event.waitUntil(
     caches
       .open(CACHE_NAME)
-      .then((cache) => cache.addAll(PRECACHE_URLS))
+      .then((cache) => precacheAppShellAndAssets(cache))
       .then(() => self.skipWaiting())
   );
 });
@@ -41,7 +85,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
 
   event.respondWith(
-    caches.match(req).then((cached) => {
+    caches.match(req, { ignoreSearch: true }).then((cached) => {
       const networkFetch = fetch(req)
         .then((response) => {
           if (
@@ -56,7 +100,7 @@ self.addEventListener('fetch', (event) => {
           }
           return response;
         })
-        .catch(() => cached);
+        .catch(() => cached || (req.mode === 'navigate' ? caches.match('./pocket.html') : undefined));
 
       return cached || networkFetch;
     })

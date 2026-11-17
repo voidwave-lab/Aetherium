@@ -21,8 +21,27 @@
 
 use serde::{Deserialize, Serialize};
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Component, Path, PathBuf};
 use tauri::Manager;
+
+fn validate_safe_extension(path: &Path, allowed_exts: &[&str]) -> Result<(), String> {
+    if path.components().any(|c| matches!(c, Component::ParentDir)) {
+        return Err("Rejected file path containing parent directory traversal ('..')".to_string());
+    }
+    let ext = path
+        .extension()
+        .and_then(|s| s.to_str())
+        .map(|s| s.to_ascii_lowercase())
+        .unwrap_or_default();
+    if !allowed_exts.iter().any(|allowed| *allowed == ext) {
+        return Err(format!(
+            "Unsupported file extension '.{}' (allowed: {})",
+            ext,
+            allowed_exts.join(", ")
+        ));
+    }
+    Ok(())
+}
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct ConstellationFilePayload {
@@ -90,7 +109,11 @@ fn save_constellation_json(
         .map_err(|err| format!("Invalid constellation JSON schema: {}", err))?;
 
     let target_path = match file_path {
-        Some(custom) if !custom.trim().is_empty() => PathBuf::from(custom),
+        Some(custom) if !custom.trim().is_empty() => {
+            let p = PathBuf::from(custom);
+            validate_safe_extension(&p, &["json"])?;
+            p
+        }
         _ => {
             let dir = resolve_presets_dir(&app_handle)?;
             let safe_name: String = parsed
@@ -114,6 +137,7 @@ fn save_constellation_json(
 #[tauri::command]
 fn load_constellation_json(file_path: String) -> Result<String, String> {
     let path = PathBuf::from(&file_path);
+    validate_safe_extension(&path, &["json"])?;
     if !path.exists() {
         return Err(format!("Constellation file not found at {}", file_path));
     }
@@ -129,6 +153,7 @@ fn load_constellation_json(file_path: String) -> Result<String, String> {
 #[tauri::command]
 fn save_audio_binary_file(file_path: String, bytes: Vec<u8>) -> Result<String, String> {
     let path = PathBuf::from(&file_path);
+    validate_safe_extension(&path, &["wav", "webm", "m4a", "ogg"])?;
     if let Some(parent) = path.parent() {
         if !parent.exists() {
             fs::create_dir_all(parent)

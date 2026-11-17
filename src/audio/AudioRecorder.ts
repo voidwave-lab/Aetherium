@@ -28,6 +28,7 @@ import {
 } from '../state/store';
 
 export type ExportAudioFormat = 'wav' | 'webm';
+export type AudioFileExtension = 'wav' | 'webm' | 'm4a' | 'ogg';
 
 const FADE_IN_DURATION_SEC = 2.0;
 const FADE_OUT_DURATION_SEC = 3.0;
@@ -52,7 +53,7 @@ export function formatPoeticSeedSlug(seedId: SeedId): string {
  */
 export function buildPoeticAudioFilename(
   seedId: SeedId,
-  format: ExportAudioFormat,
+  format: AudioFileExtension,
   anchorDurationMin?: number | null
 ): string {
   const seedSlug = formatPoeticSeedSlug(seedId);
@@ -199,6 +200,8 @@ export class AudioRecorder {
   private capturedSampleRate = 48000;
 
   private compactBlobs: Blob[] = [];
+  private compactIsWavFallback = false;
+  private scriptCollectorConnected = false;
   private lastEncodedWav: Uint8Array | null = null;
   private lastCompactBytes: Uint8Array | null = null;
   private lastTargetMinutes: number | null = null;
@@ -234,12 +237,18 @@ export class AudioRecorder {
       // Extract the underlying native AudioNode from Tone.Gain so we can connect to native ScriptProcessorNode
       const tapInternal = (this.tapGainNode as unknown as {
         _gainNode?: { _nativeAudioNode?: AudioNode };
-        input?: { _nativeAudioNode?: AudioNode };
+        input?: { _nativeAudioNode?: AudioNode } | AudioNode;
+        output?: { _nativeAudioNode?: AudioNode } | AudioNode;
       });
+      const inputWrapped = tapInternal.input as { _nativeAudioNode?: AudioNode } | undefined;
+      const outputWrapped = tapInternal.output as { _nativeAudioNode?: AudioNode } | undefined;
       const nativeSourceNode: AudioNode | null =
         tapInternal._gainNode?._nativeAudioNode ??
-        tapInternal.input?._nativeAudioNode ??
-        null;
+        inputWrapped?._nativeAudioNode ??
+        outputWrapped?._nativeAudioNode ??
+        (nativeCtx === stdCtx && tapInternal.input && 'connect' in tapInternal.input
+          ? (tapInternal.input as AudioNode)
+          : null);
 
       if (nativeSourceNode && typeof nativeCtx.createScriptProcessor === 'function') {
         this.nativeTapBridgeNode = nativeCtx.createGain();
@@ -266,9 +275,8 @@ export class AudioRecorder {
           this.rightChunks.push(copyR);
           this.totalCapturedFrames += copyL.length;
         };
-
-        this.nativeTapBridgeNode.connect(this.scriptCollectorNode);
-        this.scriptCollectorNode.connect(this.silentSinkNode);
+        // Note: scriptCollectorNode is connected on-demand in startRecording() and disconnected
+        // when idle so zero main-thread audio callbacks run during normal sanctuary playback.
       }
 
       // 2. MediaStreamAudioDestinationNode for Format B (Compact 256 kbps .webm / .ogg)
@@ -289,6 +297,55 @@ export class AudioRecorder {
     }
   }
 
+  private connectScriptCollector(): void {
+    if (
+      this.scriptCollectorConnected ||
+      !this.nativeTapBridgeNode ||
+      !this.scriptCollectorNode ||
+      !this.silentSinkNode
+    ) {
+      return;
+    }
+    try {
+      this.nativeTapBridgeNode.connect(this.scriptCollectorNode);
+      this.scriptCollectorNode.connect(this.silentSinkNode);
+      this.scriptCollectorConnected = true;
+    } catch {
+      this.scriptCollectorConnected = false;
+    }
+  }
+
+  private disconnectScriptCollector(): void {
+    if (!this.scriptCollectorConnected) return;
+    try {
+      if (this.nativeTapBridgeNode && this.scriptCollectorNode) {
+        this.nativeTapBridgeNode.disconnect(this.scriptCollectorNode);
+      }
+      this.scriptCollectorNode?.disconnect();
+    } catch {
+      // Ignore disconnect errors if already detached
+    }
+    this.scriptCollectorConnected = false;
+  }
+
+  public getCompactFormatInfo(): {
+    extension: AudioFileExtension;
+    mimeType: string;
+    badgeLabel: string;
+  } {
+    if (this.compactIsWavFallback) {
+      return { extension: 'wav', mimeType: 'audio/wav', badgeLabel: 'WAV' };
+    }
+    const lower = this.mediaRecorderMimeType.toLowerCase();
+    if (lower.includes('mp4') || lower.includes('aac')) {
+      return { extension: 'm4a', mimeType: 'audio/mp4', badgeLabel: 'M4A' };
+    }
+    if (lower.includes('ogg')) {
+      return { extension: 'ogg', mimeType: 'audio/ogg', badgeLabel: 'OGG' };
+    }
+    return { extension: 'webm', mimeType: 'audio/webm', badgeLabel: 'WEBM' };
+  }
+
   /**
    * Starts a live Explorer capture or a timed Practitioner "Patient Take-Home Anchor" recording.
    */
@@ -304,6 +361,7 @@ export class AudioRecorder {
     this.rightChunks = [];
     this.totalCapturedFrames = 0;
     this.compactBlobs = [];
+    this.compactIsWavFallback = false;
     this.lastEncodedWav = null;
     this.lastCompactBytes = null;
     this.lastTargetMinutes = targetDurationMinutes ?? null;
@@ -312,6 +370,8 @@ export class AudioRecorder {
     if (activeNativeCtx) {
       this.capturedSampleRate = activeNativeCtx.sampleRate || 48000;
     }
+
+    this.connectScriptCollector();
 
     // Apply smooth 2-second fade-in on the MediaStream recording feed as well
     if (activeNativeCtx && this.mediaStreamGainNode) {
@@ -431,6 +491,7 @@ export class AudioRecorder {
   public async stopRecording(): Promise<void> {
     if (!this.isCapturing) return;
     this.isCapturing = false;
+    this.disconnectScriptCollector();
 
     if (this.timerIntervalId !== null) {
       window.clearInterval(this.timerIntervalId);
@@ -476,11 +537,13 @@ export class AudioRecorder {
 
     // Finalize compact mobile audio bytes from MediaRecorder (or fallback if unavailable)
     if (this.compactBlobs.length > 0) {
+      this.compactIsWavFallback = false;
       const mergedBlob = new Blob(this.compactBlobs, { type: this.mediaRecorderMimeType });
       const arrayBuf = await mergedBlob.arrayBuffer();
       this.lastCompactBytes = new Uint8Array(arrayBuf);
     } else {
       // Fallback in restricted webviews without MediaRecorder support
+      this.compactIsWavFallback = true;
       this.lastCompactBytes = this.lastEncodedWav;
     }
 
@@ -498,7 +561,8 @@ export class AudioRecorder {
       lastRecordedSampleRate: this.capturedSampleRate,
     });
 
-    store.showToast('Sanctuary audio captured · Choose Studio WAV or Compact WebM to save');
+    const compactLabel = this.getCompactFormatInfo().badgeLabel;
+    store.showToast(`Sanctuary audio captured · Choose Studio WAV or Compact ${compactLabel} to save`);
   }
 
   /**
@@ -507,6 +571,7 @@ export class AudioRecorder {
   public cancelRecording(): void {
     if (!this.isCapturing) return;
     this.isCapturing = false;
+    this.disconnectScriptCollector();
 
     if (this.timerIntervalId !== null) {
       window.clearInterval(this.timerIntervalId);
@@ -569,6 +634,9 @@ export class AudioRecorder {
   public async saveCapturedAudio(format: ExportAudioFormat): Promise<boolean> {
     const recState = store.getState().recording;
     const seedId = recState.lastRecordedSeedId ?? store.getState().activeSeedId;
+    const compactInfo = this.getCompactFormatInfo();
+    const resolvedExt: AudioFileExtension = format === 'wav' ? 'wav' : compactInfo.extension;
+    const resolvedMime = format === 'wav' ? 'audio/wav' : compactInfo.mimeType;
     const bytes = format === 'wav' ? this.lastEncodedWav : this.lastCompactBytes;
 
     if (!bytes || bytes.byteLength === 0) {
@@ -578,7 +646,7 @@ export class AudioRecorder {
 
     const defaultFilename = buildPoeticAudioFilename(
       seedId,
-      format,
+      resolvedExt,
       recState.lastRecordedSource === 'clinical-anchor' ? this.lastTargetMinutes : null
     );
 
@@ -593,7 +661,7 @@ export class AudioRecorder {
         const filterName =
           format === 'wav'
             ? 'Lossless Studio WAV Audio (16-bit PCM)'
-            : 'Compact Mobile Audio (.webm)';
+            : `Compact Mobile Audio (.${resolvedExt})`;
 
         const selectedPath = await save({
           title:
@@ -601,7 +669,7 @@ export class AudioRecorder {
               ? 'Export Patient Take-Home Audio Anchor'
               : 'Save Sanctuary Audio Recording',
           defaultPath: defaultFilename,
-          filters: [{ name: filterName, extensions: [format] }],
+          filters: [{ name: filterName, extensions: [resolvedExt] }],
         });
 
         if (!selectedPath) {
@@ -623,7 +691,7 @@ export class AudioRecorder {
 
         store.updateRecordingState({ hasPendingExport: false });
         store.showToast(
-          `Saved ${format.toUpperCase()} recording (${this.formatByteSize(bytes.byteLength)})`
+          `Saved ${resolvedExt.toUpperCase()} recording (${this.formatByteSize(bytes.byteLength)})`
         );
         return true;
       } catch {
@@ -632,12 +700,11 @@ export class AudioRecorder {
     }
 
     // Graceful Browser `<a>` Blob download fallback (when running in `npm run dev` browser mode)
-    const mimeType = format === 'wav' ? 'audio/wav' : 'audio/webm';
     const blobBuffer = bytes.buffer.slice(
       bytes.byteOffset,
       bytes.byteOffset + bytes.byteLength
     ) as ArrayBuffer;
-    const blob = new Blob([blobBuffer], { type: mimeType });
+    const blob = new Blob([blobBuffer], { type: resolvedMime });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.href = url;
